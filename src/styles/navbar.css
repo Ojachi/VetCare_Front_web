@@ -1,0 +1,161 @@
+/* Navbar personalizado con Materialize */
+.navbar-custom {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 997;
+}
+
+.navbar-custom .nav-wrapper {
+  padding: 0 2rem;
+}
+
+/* Contenedor principal del navbar */
+.navbar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Logo y marca */
+.navbar-custom .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  position: relative;
+  left: 0;
+  transform: none;
+  padding: 0.5rem 0;
+}
+
+.navbar-custom .brand-logo:hover {
+  opacity: 0.8;
+}
+
+.navbar-logo {
+  width: 32px;
+  height: 32px;
+}
+
+.navbar-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+/* Menú central */
+.navbar-menu {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-menu li {
+  display: inline-block;
+}
+
+.navbar-menu a {
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.5rem 0.8rem;
+  transition: color 0.3s ease;
+}
+
+.navbar-menu a:hover {
+  color: #2c3e50 !important;
+  background-color: transparent;
+}
+
+/* Botones de acción */
+.navbar-actions {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar-actions li {
+  display: inline-block;
+}
+
+.navbar-actions .btn-flat {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 1.2rem;
+  border-radius: 8px;
+}
+
+.navbar-actions .btn {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 1.8rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(38, 166, 154, 0.3);
+}
+
+.navbar-actions .btn:hover {
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.4);
+}
+
+/* Sidenav mobile */
+.sidenav {
+  width: 280px;
+}
+
+.sidenav .user-view {
+  padding: 0;
+}
+
+.sidenav li > a {
+  font-weight: 500;
+}
+
+.sidenav .divider {
+  margin: 0.5rem 0;
+}
+
+/* Botón hamburguesa */
+.sidenav-trigger {
+  display: none;
+  margin-right: 0;
+}
+
+/* Responsive */
+@media only screen and (max-width: 992px) {
+  .navbar-custom .nav-wrapper {
+    padding: 0 1rem;
+  }
+
+  .sidenav-trigger {
+    display: block;
+  }
+
+  .navbar-container {
+    justify-content: space-between;
+  }
+
+  .navbar-title {
+    font-size: 1.3rem;
+  }
+
+  .navbar-logo {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .navbar-custom .nav-wrapper {
+    padding: 0 0.8rem;
+  }
+
+  .navbar-title {
+    font-size: 1.2rem;
+  }
+}

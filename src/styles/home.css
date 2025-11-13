@@ -1,0 +1,211 @@
+/* Estilos complementarios para Materialize CSS */
+
+/* ===== HERO SECTION ===== */
+.hero-section {
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    url('https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=1600') center/cover;
+  min-height: 500px;
+  position: relative;
+}
+
+.hero-overlay {
+  min-height: 500px;
+  padding: 3rem 0;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hero-subtitle {
+  margin-bottom: 2.5rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.hero-buttons .btn-large {
+  padding: 0 2.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ===== SERVICES SECTION ===== */
+.services-section {
+  padding: 5rem 0;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.section-subtitle {
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  line-height: 1.6;
+}
+
+.service-icon-container {
+  margin: 1.5rem 0;
+}
+
+.service-icon-container i {
+  font-size: 4rem;
+}
+
+.card {
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.card.hoverable:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.card .card-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.card .card-content p {
+  line-height: 1.6;
+}
+
+/* ===== TESTIMONIALS SECTION ===== */
+.testimonials-section {
+  padding: 5rem 0;
+}
+
+.testimonial-card {
+  border-radius: 12px;
+  height: 100%;
+}
+
+.testimonial-avatar {
+  width: 100px;
+  height: 100px;
+  margin: 1.5rem auto;
+  border: 4px solid #26a69a;
+}
+
+.testimonial-text {
+  font-style: italic;
+  line-height: 1.7;
+  margin: 1.5rem 0;
+  font-size: 1rem;
+}
+
+.testimonial-card h6 {
+  margin-top: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+/* ===== FOOTER ===== */
+.page-footer {
+  padding-top: 20px;
+  margin-top: 0;
+}
+
+.page-footer h5 {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.page-footer ul {
+  margin: 0;
+}
+
+.page-footer ul li {
+  margin-bottom: 0.5rem;
+}
+
+.page-footer a {
+  transition: color 0.3s ease;
+}
+
+.page-footer a:hover {
+  color: #ffffff !important;
+}
+
+.footer-copyright {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* ===== RESPONSIVE ===== */
+@media only screen and (max-width: 992px) {
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .hero-section {
+    min-height: 450px;
+  }
+
+  .hero-overlay {
+    min-height: 450px;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-buttons .btn-large {
+    width: 90%;
+    max-width: 300px;
+  }
+
+  .services-section,
+  .testimonials-section {
+    padding: 3rem 0;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+  }
+}
+
+/* Ajustes adicionales para mejor apariencia */
+.row .col {
+  padding: 0 0.75rem;
+}
+
+/* Eliminar margen inferior del último elemento */
+.home-container > *:last-child {
+  margin-bottom: 0;
+}

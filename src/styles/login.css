@@ -1,0 +1,205 @@
+/* Container principal del login */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  padding: 2rem 1rem;
+}
+
+/* Card del login */
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.login-card .card-content {
+  padding: 3rem 2.5rem;
+}
+
+/* Header con logo */
+.login-header {
+  margin-bottom: 2rem;
+}
+
+.logo-container {
+  width: 80px;
+  height: 80px;
+  background-color: #e0f2f1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.login-logo {
+  width: 45px;
+  height: 45px;
+}
+
+.login-header h4 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+/* Texto de bienvenida */
+.login-welcome {
+  margin-bottom: 2.5rem;
+}
+
+.login-welcome h5 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.login-welcome p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Campos de input */
+.input-field {
+  margin-bottom: 1.5rem;
+}
+
+.input-field input {
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  padding: 12px 16px !important;
+  height: auto !important;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.input-field input:focus {
+  border-color: #26a69a !important;
+  box-shadow: 0 1px 0 0 #26a69a !important;
+}
+
+.input-field label {
+  color: #757575;
+  left: 16px;
+  font-size: 0.95rem;
+}
+
+.input-field label.active {
+  color: #26a69a;
+  transform: translateY(-20px) scale(0.8);
+}
+
+/* Campo de contraseña con ícono */
+.password-field {
+  position: relative;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  cursor: pointer;
+  color: #757575;
+  transition: color 0.3s ease;
+  user-select: none;
+}
+
+.password-toggle:hover {
+  color: #26a69a;
+}
+
+/* Enlace de olvidar contraseña */
+.forgot-password {
+  margin-top: -0.5rem;
+  margin-bottom: 2rem;
+}
+
+.forgot-password a {
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.forgot-password a:hover {
+  color: #2bbbad !important;
+}
+
+/* Botón de login */
+.btn-block {
+  width: 100%;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  padding: 0 2rem;
+  height: 50px;
+  line-height: 50px;
+}
+
+.btn-block:hover {
+  box-shadow: 0 6px 16px rgba(38, 166, 154, 0.4);
+}
+
+/* Footer del login */
+.login-footer {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.login-footer p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.login-footer a {
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.login-footer a:hover {
+  color: #2bbbad !important;
+}
+
+/* Responsive */
+@media only screen and (max-width: 600px) {
+  .login-card .card-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .login-welcome h5 {
+    font-size: 1.4rem;
+  }
+
+  .login-welcome p {
+    font-size: 0.9rem;
+  }
+
+  .logo-container {
+    width: 70px;
+    height: 70px;
+  }
+
+  .login-logo {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Fix para el comportamiento de Materialize con inputs */
+.input-field input:not(.browser-default):focus:not([readonly]) {
+  border-bottom: none;
+  box-shadow: 0 1px 0 0 #26a69a;
+}
+
+.input-field input:not(.browser-default) {
+  border-bottom: none;
+  margin-bottom: 0;
+}

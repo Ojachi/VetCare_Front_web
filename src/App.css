@@ -1,0 +1,17 @@
+/* App.css limpio para no interferir con Materialize */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Elimina los estilos de max-width y padding que vienen por defecto */
+/* Materialize maneja sus propios contenedores */
