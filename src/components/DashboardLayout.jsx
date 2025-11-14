@@ -1,12 +1,12 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Sidebar from './Sidebar';
 import logo from '../assets/icon_dog.svg';
 
 const DashboardLayout = ({ children, navigation }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   const handleLogout = () => {
@@ -14,26 +14,24 @@ const DashboardLayout = ({ children, navigation }) => {
     navigate('/login');
   };
 
-  const isActive = (path) => location.pathname === path;
-
   const defaultNavigationByRole = React.useMemo(() => ({
-    DUENO: [
+    OWNER: [
       { path: '/owner/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/owner/pets', icon: 'pets', label: 'Mis Mascotas' },
       { path: '/owner/appointments', icon: 'event', label: 'Mis Citas' },
       { path: '/owner/history', icon: 'history', label: 'Historial Médico' },
     ],
-    EMPLEADO: [
+    EMPLOYEE: [
       { path: '/employee/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/employee/pets', icon: 'pets', label: 'Mascotas' },
       { path: '/employee/appointments', icon: 'event', label: 'Citas' },
     ],
-    VETERINARIO: [
+    VETERINARIAN: [
       { path: '/veterinarian/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/veterinarian/appointments', icon: 'event', label: 'Citas' },
       { path: '/veterinarian/diagnoses', icon: 'medical_services', label: 'Diagnósticos' },
     ],
-    ADMINISTRADOR: [
+    ADMIN: [
       { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/admin/users', icon: 'groups', label: 'Usuarios' },
       { path: '/admin/services', icon: 'build', label: 'Servicios' },
@@ -81,40 +79,18 @@ const DashboardLayout = ({ children, navigation }) => {
       </nav>
 
       <div className="flex">
-        {/* Sidebar */}
-        <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:sticky top-16 left-0 z-30 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 transition-transform duration-300 ease-in-out overflow-y-auto`}>
-          <nav className="p-4 space-y-1">
-            {resolvedNavigation.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-teal text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <span className="material-icons text-xl">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-        </aside>
+        {/* Sidebar Component */}
+        <Sidebar 
+          navigation={resolvedNavigation}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-6 lg:p-8">
           {children}
         </main>
       </div>
-
-      {/* Overlay para cerrar sidebar en móvil */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
     </div>
   );
 };
