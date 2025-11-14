@@ -13,6 +13,7 @@ const OwnerPets = () => {
     breed: '',
     age: '',
     weight: '',
+    sex: '',
   });
   const [feedback, setFeedback] = useState(null);
 
@@ -66,6 +67,7 @@ const OwnerPets = () => {
       breed: pet.breed,
       age: pet.age,
       weight: pet.weight,
+      sex: pet.sex,
     });
     setShowModal(true);
   };
@@ -92,7 +94,7 @@ const OwnerPets = () => {
           <button
             onClick={() => {
               setEditingPet(null);
-              setFormData({ name: '', species: '', breed: '', age: '', weight: '' });
+              setFormData({ name: '', species: '', breed: '', age: '', weight: '', sex: '' });
               setShowModal(true);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg transition-shadow"
@@ -151,6 +153,7 @@ const OwnerPets = () => {
                 <div className="space-y-2 text-sm text-gray-600">
                   <p><span className="font-medium">Especie:</span> {pet.species}</p>
                   <p><span className="font-medium">Raza:</span> {pet.breed}</p>
+                  <p><span className="font-medium">Sexo:</span> {pet.sex === 'M' ? 'Macho' : 'Hembra'}</p>
                   <p><span className="font-medium">Edad:</span> {pet.age} años</p>
                   <p><span className="font-medium">Peso:</span> {pet.weight} kg</p>
                 </div>
@@ -196,6 +199,19 @@ const OwnerPets = () => {
                     onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
                     className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                  <select
+                    required
+                    value={formData.sex}
+                    onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
+                  >
+                    <option value="">Seleccionar</option>
+                    <option value="M">Macho</option>
+                    <option value="F">Hembra</option>
+                  </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
