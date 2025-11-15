@@ -5,10 +5,10 @@ import { userApi, petApi, appointmentApi } from '../../api/services';
 const EmployeeDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    owners: 0,
     pets: 0,
     pendingAppointments: 0,
     todayAppointments: 0,
+    completedAppointments: 0,
   });
 
   const navigation = [
@@ -20,23 +20,25 @@ const EmployeeDashboard = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [usersRes, petsRes, apptRes] = await Promise.all([
-          userApi.getAll(),
+        const [petsRes, apptRes] = await Promise.all([
           petApi.getAll(),
           appointmentApi.getAll(),
         ]);
-        const users = usersRes.data || [];
-        const owners = users.filter(u => u.role === 'DUENO');
         const pets = petsRes.data || [];
         const appts = apptRes.data || [];
         const todayStr = new Date().toISOString().split('T')[0];
-        const todayAppointments = appts.filter(a => (a.datetime || a.date)?.startsWith(todayStr)).length;
-        const pendingAppointments = appts.filter(a => a.status === 'PENDIENTE').length;
+        const todayAppointments = appts.filter(a => {
+          if (!a.startDateTime) return false;
+          const appointmentDate = new Date(a.startDateTime).toISOString().split('T')[0];
+          return appointmentDate === todayStr;
+        }).length;
+        const pendingAppointments = appts.filter(a => a.status === 'PENDING').length;
+        const completedAppointments = appts.filter(a => a.status === 'COMPLETED').length;
         setStats({
-          owners: owners.length,
           pets: pets.length,
           pendingAppointments,
           todayAppointments,
+          completedAppointments,
         });
       } catch (e) {
         // noop visual fallback handled by UI
@@ -60,13 +62,6 @@ const EmployeeDashboard = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center gap-3 mb-2">
-                <span className="material-icons text-teal">groups</span>
-                <h3 className="text-sm font-medium text-gray-600">Dueños</h3>
-              </div>
-              <p className="text-3xl font-bold text-gray-800">{stats.owners}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-2">
                 <span className="material-icons text-teal">pets</span>
                 <h3 className="text-sm font-medium text-gray-600">Mascotas</h3>
               </div>
@@ -85,6 +80,13 @@ const EmployeeDashboard = () => {
                 <h3 className="text-sm font-medium text-gray-600">Citas Hoy</h3>
               </div>
               <p className="text-3xl font-bold text-gray-800">{stats.todayAppointments}</p>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="material-icons text-green-600">check_circle</span>
+                <h3 className="text-sm font-medium text-gray-600">Citas Completadas</h3>
+              </div>
+              <p className="text-3xl font-bold text-gray-800">{stats.completedAppointments}</p>
             </div>
           </div>
         )}

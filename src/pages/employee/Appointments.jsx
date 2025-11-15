@@ -1,25 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { appointmentApi, petApi, serviceApi, userApi } from '../../api/services';
+import { appointmentApi } from '../../api/services';
 
 const EmployeeAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
-  const [services, setServices] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [pets, setPets] = useState([]);
   const [feedback, setFeedback] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({ status: 'ALL', date: '' });
-
-  const [formData, setFormData] = useState({
-    ownerId: '',
-    petId: '',
-    serviceId: '',
-    date: '',
-    time: '',
-    assignedToId: '',
-  });
 
   const navigation = [
     { path: '/employee/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -27,9 +14,16 @@ const EmployeeAppointments = () => {
     { path: '/employee/appointments', icon: 'event', label: 'Citas' },
   ];
 
-  const owners = useMemo(() => (users || []).filter(u => u.role === 'DUENO'), [users]);
-  const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIO'), [users]);
-  const petsByOwner = useMemo(() => pets.filter(p => (p.owner?.id || p.ownerId) === formData.ownerId), [pets, formData.ownerId]);
+  // Extraer veterinarios únicos de las citas existentes
+  const veterinarians = useMemo(() => {
+    const vetsMap = new Map();
+    appointments.forEach(apt => {
+      if (apt.assignedTo && apt.assignedTo.role === 'VETERINARIAN') {
+        vetsMap.set(apt.assignedTo.id, apt.assignedTo);
+      }
+    });
+    return Array.from(vetsMap.values());
+  }, [appointments]);
 
   useEffect(() => {
     load();
@@ -38,17 +32,23 @@ const EmployeeAppointments = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [apptRes, servRes, usersRes, petsRes] = await Promise.all([
-        appointmentApi.getAll(),
-        serviceApi.getAll(),
-        userApi.getAll(),
-        petApi.getAll(),
-      ]);
+      // Intentar primero con el endpoint de empleado
+      let apptRes = await appointmentApi.getAll();
+      console.log('Citas desde /appointments:', apptRes.data);
+      
+      // Si está vacío, intentar con getAllAdmin para ver todas las citas
+      if (!apptRes.data || apptRes.data.length === 0) {
+        try {
+          apptRes = await appointmentApi.getAllAdmin();
+          console.log('Citas desde /appointments/admin:', apptRes.data);
+        } catch (adminError) {
+          console.log('No hay acceso a /appointments/admin, mostrando citas asignadas solamente');
+        }
+      }
+      
       setAppointments(apptRes.data || []);
-      setServices(servRes.data || []);
-      setUsers(usersRes.data || []);
-      setPets(petsRes.data || []);
     } catch (e) {
+      console.error('Error al cargar citas:', e);
       setFeedback({ type: 'error', message: 'Error al cargar datos' });
     } finally {
       setLoading(false);
@@ -57,8 +57,10 @@ const EmployeeAppointments = () => {
 
   const filteredAppointments = useMemo(() => {
     let list = appointments;
+    console.log('Appointments antes de filtrar:', list);
     if (filters.status !== 'ALL') list = list.filter(a => a.status === filters.status);
-    if (filters.date) list = list.filter(a => (a.datetime || a.date)?.startsWith(filters.date));
+    if (filters.date) list = list.filter(a => (a.startDateTime || a.datetime || a.date)?.startsWith(filters.date));
+    console.log('Appointments después de filtrar:', list);
     return list;
   }, [appointments, filters]);
 
@@ -90,26 +92,28 @@ const EmployeeAppointments = () => {
 
   const handleAssignVet = async (appointmentId, assignedToId) => {
     try {
-      // Actualizar directamente la cita con el nuevo assignedToId
-      await appointmentApi.update(appointmentId, { assignedToId });
+      // Encontrar la cita completa para enviar todos los campos requeridos
+      const appointment = appointments.find(a => a.id === appointmentId);
+      if (!appointment) {
+        setFeedback({ type: 'error', message: 'Cita no encontrada' });
+        return;
+      }
+      
+      // Enviar todos los campos requeridos por el backend
+      const updateData = {
+        petId: appointment.pet?.id || appointment.petId,
+        serviceId: appointment.service?.id || appointment.serviceId,
+        startDateTime: appointment.startDateTime || appointment.datetime,
+        assignedToId: assignedToId,
+        note: appointment.note || ''
+      };
+      
+      await appointmentApi.update(appointmentId, updateData);
       setFeedback({ type: 'success', message: 'Asignación actualizada' });
       load();
     } catch (e) {
-      setFeedback({ type: 'error', message: 'No se pudo asignar' });
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const startDateTime = `${formData.date}T${formData.time}`;
-      await appointmentApi.create({ ...formData, startDateTime });
-      setFeedback({ type: 'success', message: 'Cita creada' });
-      setShowModal(false);
-      setFormData({ ownerId: '', petId: '', serviceId: '', date: '', time: '', assignedToId: '' });
-      load();
-    } catch (e) {
-      setFeedback({ type: 'error', message: e.response?.data?.message || 'Error al crear cita' });
+      console.error('Error al asignar veterinario:', e);
+      setFeedback({ type: 'error', message: e.response?.data?.message || 'No se pudo asignar' });
     }
   };
 
@@ -119,12 +123,8 @@ const EmployeeAppointments = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
-            <p className="text-gray-600 mt-2">Gestiona todas las citas del sistema</p>
+            <p className="text-gray-600 mt-2">Gestiona y confirma las citas del sistema</p>
           </div>
-          <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg">
-            <span className="material-icons">add</span>
-            <span>Nueva Cita</span>
-          </button>
         </div>
 
         {feedback && (
@@ -137,10 +137,10 @@ const EmployeeAppointments = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
               <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
                 <option value="ALL">Todos</option>
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="CONFIRMADA">Confirmada</option>
-                <option value="COMPLETADA">Completada</option>
-                <option value="CANCELADA">Cancelada</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="ACCEPTED">Confirmada</option>
+                <option value="COMPLETED">Completada</option>
+                <option value="CANCELLED">Cancelada</option>
               </select>
             </div>
             <div>
@@ -158,8 +158,7 @@ const EmployeeAppointments = () => {
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <span className="material-icons text-gray-300 text-6xl mb-4">event</span>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">No hay citas</h3>
-            <p className="text-gray-600 mb-6">Crea la primera cita del sistema</p>
-            <button onClick={() => setShowModal(true)} className="px-6 py-2 bg-teal text-white rounded-lg">Nueva Cita</button>
+            <p className="text-gray-600">No se encontraron citas con los filtros seleccionados</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -168,17 +167,17 @@ const EmployeeAppointments = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">{ap.pet?.name} - {ap.service?.name}</h3>
                     <p className="text-sm text-gray-600">Dueño: {ap.pet?.owner?.name || ap.owner?.name || '—'}</p>
-                    <p className="text-sm text-gray-600">Veterinario: {ap.veterinarian?.name || 'Por asignar'}</p>
+                    <p className="text-sm text-gray-600">Veterinario: {ap.assignedTo?.name || 'Por asignar'}</p>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <div className="flex items-center gap-2">
-                      <select value={ap.veterinarian?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
+                      <select value={ap.assignedTo?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
                         <option value="">Asignar Veterinario</option>
                         {veterinarians.map(v => (
                           <option key={v.id} value={v.id}>{v.name}</option>
@@ -186,10 +185,10 @@ const EmployeeAppointments = () => {
                       </select>
                     </div>
                     <div className="flex gap-2">
-                      {ap.status === 'PENDIENTE' && (
+                      {ap.status === 'PENDING' && (
                         <button onClick={() => handleConfirm(ap.id)} className="px-3 py-1.5 text-sm text-teal hover:bg-teal/10 rounded-md">Confirmar</button>
                       )}
-                      {ap.status !== 'CANCELADA' && (
+                      {ap.status !== 'CANCELLED' && (
                         <button onClick={() => handleCancel(ap.id)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md">Cancelar</button>
                       )}
                     </div>
@@ -197,69 +196,6 @@ const EmployeeAppointments = () => {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Nueva Cita</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Dueño</label>
-                  <select required value={formData.ownerId} onChange={e => setFormData({ ...formData, ownerId: e.target.value, petId: '' })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona un dueño</option>
-                    {owners.map(o => (
-                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
-                  <select required value={formData.petId} onChange={e => setFormData({ ...formData, petId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona una mascota</option>
-                    {petsByOwner.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-                  <select required value={formData.serviceId} onChange={e => setFormData({ ...formData, serviceId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona un servicio</option>
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                    <input type="date" required min={new Date().toISOString().split('T')[0]} value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-                    <input type="time" required value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal" />
-                  </div>
-                </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Asignado a (requerido)</label>
-                    <select required value={formData.assignedToId} onChange={e => setFormData({ ...formData, assignedToId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                      <option value="">Selecciona empleado o veterinario</option>
-                      {veterinarians.map(v => (
-                        <option key={v.id} value={v.id}>{v.name} (Veterinario)</option>
-                      ))}
-                      {users.filter(u => u.role === 'EMPLEADO').map(e => (
-                        <option key={e.id} value={e.id}>{e.name} (Empleado)</option>
-                      ))}
-                    </select>
-                  </div>
-                <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</button>
-                  <button type="submit" className="flex-1 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg">Crear</button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
       </div>

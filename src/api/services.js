@@ -68,7 +68,8 @@ export const serviceApi = {
 // };
 
 export const userApi = {
-  getAll: () => axiosInstance.get('/admin/users'),
+  getAll: () => axiosInstance.get('/users'),
+  getAllAdmin: () => axiosInstance.get('/admin/users'),
   getById: (id) => axiosInstance.get(`/users/${id}`),
   update: (id, userData) => axiosInstance.put(`/users/${id}`, userData),
   // Endpoints de admin

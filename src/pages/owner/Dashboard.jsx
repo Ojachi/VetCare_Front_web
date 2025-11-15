@@ -26,7 +26,7 @@ const OwnerDashboard = () => {
         appointmentApi.getAll(),
       ]);
       const appointments = appointmentsRes.data || [];
-      const upcoming = appointments.filter(a => a.status === 'PENDIENTE').length;
+      const upcoming = appointments.filter(a => a.status === 'PENDING').length;
       setStats({
         pets: petsRes.data?.length || 0,
         appointments: appointments.length,

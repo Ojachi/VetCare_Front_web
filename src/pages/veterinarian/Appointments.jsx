@@ -139,8 +139,8 @@ const VeterinarianAppointments = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">{ap.pet?.name} - {ap.service?.name}</h3>
                     <p className="text-sm text-gray-600">Dueño: {ap.pet?.owner?.name || '—'}</p>

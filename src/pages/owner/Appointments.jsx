@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import ServiceSelector from '../../components/ServiceSelector';
 import { appointmentApi, petApi, serviceApi } from '../../api/services';
 
 const OwnerAppointments = () => {
@@ -118,11 +119,11 @@ const OwnerAppointments = () => {
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                         {appointment.status}
                       </span>
-                      <span className="text-sm text-gray-500">{new Date(appointment.datetime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      <span className="text-sm text-gray-500">{new Date(appointment.datetime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(appointment.startDateTime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(appointment.startDateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">{appointment.pet?.name} - {appointment.service?.name}</h3>
-                    <p className="text-sm text-gray-600">Veterinario: {appointment.veterinarian?.name || 'Por asignar'}</p>
+                    <p className="text-sm text-gray-600">Veterinario: {appointment.assignedTo?.name || 'Por asignar'}</p>
                   </div>
                   {appointment.status === 'PENDING' && (
                     <button
@@ -160,17 +161,12 @@ const OwnerAppointments = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-                  <select
-                    required
+                  <ServiceSelector
+                    services={services}
                     value={formData.serviceId}
-                    onChange={(e) => setFormData({ ...formData, serviceId: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
-                  >
-                    <option value="">Selecciona un servicio</option>
-                    {services.map((service) => (
-                      <option key={service.id} value={service.id}>{service.name} - ${service.price}</option>
-                    ))}
-                  </select>
+                    onChange={(serviceId) => setFormData({ ...formData, serviceId })}
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>

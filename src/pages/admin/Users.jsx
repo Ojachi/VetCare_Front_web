@@ -29,7 +29,7 @@ const AdminUsers = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await userApi.getAll();
+      const res = await userApi.getAllAdmin();
       setUsers(res.data || []);
     } catch (e) {
       setUsers([]);

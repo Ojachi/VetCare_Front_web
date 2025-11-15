@@ -39,13 +39,17 @@ const AdminDashboard = () => {
   }, []);
 
   const counts = useMemo(() => {
-    const owners = users.filter(u => u.role === 'OWNER').length; // ✅ Cambio: OWNER en lugar de DUENO
-    const employees = users.filter(u => u.role === 'EMPLOYEE').length; // ✅ Cambio: EMPLOYEE en lugar de EMPLEADO
-    const vets = users.filter(u => u.role === 'VETERINARIAN').length; // ✅ Cambio: VETERINARIAN en lugar de VETERINARIO
-    const admins = users.filter(u => u.role === 'ADMIN').length; // ✅ Cambio: ADMIN en lugar de ADMINISTRADOR
+    const owners = users.filter(u => u.role === 'OWNER').length;
+    const employees = users.filter(u => u.role === 'EMPLOYEE').length;
+    const vets = users.filter(u => u.role === 'VETERINARIAN').length;
+    const admins = users.filter(u => u.role === 'ADMIN').length;
     const todayStr = new Date().toISOString().split('T')[0];
-    const today = appointments.filter(a => (a.datetime || a.date)?.startsWith(todayStr)).length;
-    const pending = appointments.filter(a => a.status === 'PENDIENTE').length;
+    const today = appointments.filter(a => {
+      if (!a.startDateTime) return false;
+      const appointmentDate = new Date(a.startDateTime).toISOString().split('T')[0];
+      return appointmentDate === todayStr;
+    }).length;
+    const pending = appointments.filter(a => a.status === 'PENDING').length;
     return {
       users: users.length,
       owners, employees, vets, admins,
@@ -99,10 +103,10 @@ const AdminDashboard = () => {
                     <div key={ap.id} className="border rounded-lg p-4 flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-3 mb-1">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
-                          <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'ACCEPTED' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
+                          <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' })}</span>
                         </div>
-                        <p className="text-sm text-gray-700"><strong>{ap.pet?.name}</strong> — {ap.service?.name} · Vet: {ap.veterinarian?.name || '—'}</p>
+                        <p className="text-sm text-gray-700"><strong>{ap.pet?.name}</strong> — {ap.service?.name} · Vet: {ap.assignedTo?.name || '—'}</p>
                       </div>
                       <a className="text-teal text-sm hover:underline" href="/admin/appointments">Ver todas</a>
                     </div>

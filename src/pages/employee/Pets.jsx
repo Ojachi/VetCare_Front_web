@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { petApi, userApi } from '../../api/services';
+import { petApi } from '../../api/services';
 
 const EmployeePets = () => {
   const [loading, setLoading] = useState(true);
   const [pets, setPets] = useState([]);
-  const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -19,7 +18,6 @@ const EmployeePets = () => {
     weight: '',
     sex: '',
     color: '',
-    ownerId: '',
   });
 
   const navigation = [
@@ -28,8 +26,6 @@ const EmployeePets = () => {
     { path: '/employee/appointments', icon: 'event', label: 'Citas' },
   ];
 
-  const owners = useMemo(() => (users || []).filter(u => u.role === 'DUENO'), [users]);
-
   useEffect(() => {
     load();
   }, []);
@@ -37,9 +33,8 @@ const EmployeePets = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const [petsRes, usersRes] = await Promise.all([petApi.getAll(), userApi.getAll()]);
+      const petsRes = await petApi.getAll();
       setPets(petsRes.data || []);
-      setUsers(usersRes.data || []);
     } catch (e) {
       setFeedback({ type: 'error', message: 'Error al cargar datos' });
     } finally {
@@ -58,12 +53,6 @@ const EmployeePets = () => {
     );
   }, [pets, query]);
 
-  const openCreate = () => {
-    setEditing(null);
-    setFormData({ name: '', species: '', breed: '', age: '', weight: '', sex: '', color: '', ownerId: '' });
-    setShowModal(true);
-  };
-
   const openEdit = (pet) => {
     setEditing(pet);
     setFormData({
@@ -74,7 +63,6 @@ const EmployeePets = () => {
       weight: pet.weight || '',
       sex: pet.sex || '',
       color: pet.color || '',
-      ownerId: pet.owner?.id || '',
     });
     setShowModal(true);
   };
@@ -93,16 +81,14 @@ const EmployeePets = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Solo permitir edición, no creación
       if (editing) {
         await petApi.update(editing.id, { ...formData });
         setFeedback({ type: 'success', message: 'Mascota actualizada' });
-      } else {
-        await petApi.create({ ...formData });
-        setFeedback({ type: 'success', message: 'Mascota creada' });
+        setShowModal(false);
+        setEditing(null);
+        load();
       }
-      setShowModal(false);
-      setEditing(null);
-      load();
     } catch (e) {
       setFeedback({ type: 'error', message: e.response?.data?.message || 'Error al guardar' });
     }
@@ -114,12 +100,8 @@ const EmployeePets = () => {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Mascotas</h1>
-            <p className="text-gray-600 mt-2">Gestiona todas las mascotas del sistema</p>
+            <p className="text-gray-600 mt-2">Consulta y edita la información de las mascotas</p>
           </div>
-          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg">
-            <span className="material-icons">add</span>
-            <span>Nueva Mascota</span>
-          </button>
         </div>
 
         {feedback && (
@@ -150,8 +132,7 @@ const EmployeePets = () => {
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <span className="material-icons text-gray-300 text-6xl mb-4">pets</span>
             <h3 className="text-lg font-semibold text-gray-800 mb-2">No hay mascotas</h3>
-            <p className="text-gray-600 mb-6">Registra la primera mascota en el sistema</p>
-            <button onClick={openCreate} className="px-6 py-2 bg-teal text-white rounded-lg">Nueva Mascota</button>
+            <p className="text-gray-600">No se encontraron mascotas en el sistema</p>
           </div>
         ) : (
           <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
@@ -190,21 +171,17 @@ const EmployeePets = () => {
         {showModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">{editing ? 'Editar Mascota' : 'Nueva Mascota'}</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Editar Mascota</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Dueño</label>
-                  <select
-                    required
-                    value={formData.ownerId}
-                    onChange={(e) => setFormData({ ...formData, ownerId: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
-                  >
-                    <option value="">Selecciona un dueño</option>
-                    {owners.map(o => (
-                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
-                    ))}
-                  </select>
+                  <input 
+                    type="text" 
+                    value={editing?.owner?.name || 'Sin asignar'} 
+                    disabled 
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm bg-gray-50 text-gray-600"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">No se puede cambiar el dueño</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>

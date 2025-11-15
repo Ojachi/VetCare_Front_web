@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import ServiceSelector from '../../components/ServiceSelector';
 import { appointmentApi, serviceApi, userApi, petApi } from '../../api/services';
 
 const AdminAppointments = () => {
@@ -28,9 +29,15 @@ const AdminAppointments = () => {
     { path: '/admin/appointments', icon: 'event', label: 'Citas' },
   ];
 
-  const owners = useMemo(() => (users || []).filter(u => u.role === 'OWNER'), [users]); // ✅ Cambio: OWNER en lugar de DUENO
-  const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIAN'), [users]); // ✅ Cambio: VETERINARIAN en lugar de VETERINARIO
-  const petsByOwner = useMemo(() => pets.filter(p => (p.owner?.id || p.ownerId) === formData.ownerId), [pets, formData.ownerId]);
+  const owners = useMemo(() => (users || []).filter(u => u.role === 'OWNER'), [users]);
+  const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIAN'), [users]);
+  const petsByOwner = useMemo(() => {
+    if (!formData.ownerId) return [];
+    return pets.filter(p => {
+      const petOwnerId = p.owner?.id;
+      return petOwnerId && Number(petOwnerId) === Number(formData.ownerId);
+    });
+  }, [pets, formData.ownerId]);
 
   useEffect(() => { load(); }, []);
 
@@ -40,7 +47,7 @@ const AdminAppointments = () => {
       const [apptRes, servRes, usersRes, petsRes] = await Promise.all([
         appointmentApi.getAll(),
         serviceApi.getAll(),
-        userApi.getAll(),
+        userApi.getAllAdmin(),
         petApi.getAll(),
       ]);
       setAppointments(apptRes.data || []);
@@ -75,29 +82,39 @@ const AdminAppointments = () => {
 
   const handleConfirm = async (id) => {
     try {
-      if (appointmentApi.confirm) {
-        await appointmentApi.confirm(id);
-      } else {
-        await appointmentApi.update(id, { status: 'CONFIRMADA' });
-      }
+      await appointmentApi.updateStatus(id, 'ACCEPTED');
       setFeedback({ type: 'success', message: 'Cita confirmada' });
       load();
     } catch (e) {
-      setFeedback({ type: 'error', message: 'No se pudo confirmar' });
+      console.error('Error al confirmar cita:', e);
+      setFeedback({ type: 'error', message: e.response?.data?.message || 'No se pudo confirmar' });
     }
   };
 
   const handleAssignVet = async (appointmentId, veterinarianId) => {
     try {
-      if (appointmentApi.assignVeterinarian) {
-        await appointmentApi.assignVeterinarian(appointmentId, veterinarianId);
-      } else {
-        await appointmentApi.update(appointmentId, { veterinarianId });
+      // Encontrar la cita completa para enviar todos los campos requeridos
+      const appointment = appointments.find(a => a.id === appointmentId);
+      if (!appointment) {
+        setFeedback({ type: 'error', message: 'Cita no encontrada' });
+        return;
       }
+      
+      // Enviar todos los campos requeridos por el backend
+      const updateData = {
+        petId: appointment.pet?.id || appointment.petId,
+        serviceId: appointment.service?.id || appointment.serviceId,
+        startDateTime: appointment.startDateTime || appointment.datetime,
+        assignedToId: veterinarianId,
+        note: appointment.note || ''
+      };
+      
+      await appointmentApi.update(appointmentId, updateData);
       setFeedback({ type: 'success', message: 'Veterinario asignado' });
       load();
     } catch (e) {
-      setFeedback({ type: 'error', message: 'No se pudo asignar' });
+      console.error('Error al asignar veterinario:', e);
+      setFeedback({ type: 'error', message: e.response?.data?.message || 'No se pudo asignar' });
     }
   };
 
@@ -177,16 +194,16 @@ const AdminAppointments = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                      <span className="text-sm text-gray-500">{new Date(ap.datetime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-800 mb-1">{ap.pet?.name} - {ap.service?.name}</h3>
                     <p className="text-sm text-gray-600">Dueño: {ap.pet?.owner?.name || '—'}</p>
-                    <p className="text-sm text-gray-600">Veterinario: {ap.veterinarian?.name || 'Por asignar'}</p>
+                    <p className="text-sm text-gray-600">Veterinario: {ap.assignedTo?.name || 'Por asignar'}</p>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
                     <div className="flex items-center gap-2">
-                      <select value={ap.veterinarian?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
+                      <select value={ap.assignedTo?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
                         <option value="">Asignar Veterinario</option>
                         {veterinarians.map(v => (
                           <option key={v.id} value={v.id}>{v.name}</option>
@@ -233,12 +250,12 @@ const AdminAppointments = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-                  <select required value={formData.serviceId} onChange={e => setFormData({ ...formData, serviceId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona un servicio</option>
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name} - ${s.price}</option>
-                    ))}
-                  </select>
+                  <ServiceSelector
+                    services={services}
+                    value={formData.serviceId}
+                    onChange={(serviceId) => setFormData({ ...formData, serviceId })}
+                    required
+                  />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
