@@ -2,6 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { userApi } from '../../api/services';
 
+const roleMap = {
+  'OWNER': 'Dueño',
+  'ADMIN': 'Administrador',
+  'VETERINARIAN': 'Veterinario',
+  'EMPLOYEE': 'Empleado',
+};
+
 const AdminUsers = () => {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
@@ -93,10 +100,10 @@ const AdminUsers = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
               <select value={filters.role} onChange={e => setFilters({ ...filters, role: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
                 <option value="ALL">Todos</option>
-                <option value="DUENO">Dueño</option>
-                <option value="EMPLEADO">Empleado</option>
-                <option value="VETERINARIO">Veterinario</option>
-                <option value="ADMINISTRADOR">Administrador</option>
+                <option value="OWNER">Dueño</option>
+                <option value="EMPLOYEE">Empleado</option>
+                <option value="VETERINARIAN">Veterinario</option>
+                <option value="ADMIN">Administrador</option>
               </select>
             </div>
             <div>
@@ -130,12 +137,12 @@ const AdminUsers = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-600 border-b">
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">Correo</th>
-                  <th className="px-4 py-3">Teléfono</th>
-                  <th className="px-4 py-3">Rol</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">person</span>Nombre</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">email</span>Correo</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">phone</span>Teléfono</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">badge</span>Rol</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">check_circle</span>Estado</th>
+                  <th className="px-4 py-3 text-right"><span className="material-icons inline align-middle text-base mr-2">tune</span>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,10 +153,10 @@ const AdminUsers = () => {
                     <td className="px-4 py-3">{u.phone || '—'}</td>
                     <td className="px-4 py-3">
                       <select value={u.role} onChange={e => changeRole(u.id, e.target.value)} className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:ring-2 focus:ring-teal">
-                        <option value="DUENO">Dueño</option>
-                        <option value="EMPLEADO">Empleado</option>
-                        <option value="VETERINARIO">Veterinario</option>
-                        <option value="ADMINISTRADOR">Administrador</option>
+                        <option value="OWNER">{roleMap['OWNER']}</option>
+                        <option value="EMPLOYEE">{roleMap['EMPLOYEE']}</option>
+                        <option value="VETERINARIAN">{roleMap['VETERINARIAN']}</option>
+                        <option value="ADMIN">{roleMap['ADMIN']}</option>
                       </select>
                     </td>
                     <td className="px-4 py-3">

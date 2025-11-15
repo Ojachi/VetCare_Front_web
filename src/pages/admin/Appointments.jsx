@@ -28,8 +28,8 @@ const AdminAppointments = () => {
     { path: '/admin/appointments', icon: 'event', label: 'Citas' },
   ];
 
-  const owners = useMemo(() => (users || []).filter(u => u.role === 'DUENO'), [users]);
-  const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIO'), [users]);
+  const owners = useMemo(() => (users || []).filter(u => u.role === 'OWNER'), [users]); // ✅ Cambio: OWNER en lugar de DUENO
+  const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIAN'), [users]); // ✅ Cambio: VETERINARIAN en lugar de VETERINARIO
   const petsByOwner = useMemo(() => pets.filter(p => (p.owner?.id || p.ownerId) === formData.ownerId), [pets, formData.ownerId]);
 
   useEffect(() => { load(); }, []);

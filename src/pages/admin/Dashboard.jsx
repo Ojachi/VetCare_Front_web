@@ -39,10 +39,10 @@ const AdminDashboard = () => {
   }, []);
 
   const counts = useMemo(() => {
-    const owners = users.filter(u => u.role === 'DUENO').length;
-    const employees = users.filter(u => u.role === 'EMPLEADO').length;
-    const vets = users.filter(u => u.role === 'VETERINARIO').length;
-    const admins = users.filter(u => u.role === 'ADMINISTRADOR').length;
+    const owners = users.filter(u => u.role === 'OWNER').length; // ✅ Cambio: OWNER en lugar de DUENO
+    const employees = users.filter(u => u.role === 'EMPLOYEE').length; // ✅ Cambio: EMPLOYEE en lugar de EMPLEADO
+    const vets = users.filter(u => u.role === 'VETERINARIAN').length; // ✅ Cambio: VETERINARIAN en lugar de VETERINARIO
+    const admins = users.filter(u => u.role === 'ADMIN').length; // ✅ Cambio: ADMIN en lugar de ADMINISTRADOR
     const todayStr = new Date().toISOString().split('T')[0];
     const today = appointments.filter(a => (a.datetime || a.date)?.startsWith(todayStr)).length;
     const pending = appointments.filter(a => a.status === 'PENDIENTE').length;

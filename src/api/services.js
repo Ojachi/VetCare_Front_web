@@ -68,13 +68,12 @@ export const serviceApi = {
 // };
 
 export const userApi = {
-  // Los endpoints de admin/users no están en el CSV, pero mantengo estructura básica
-  getAll: () => axiosInstance.get('/users'), // Fallback, podría necesitar ajuste
+  getAll: () => axiosInstance.get('/admin/users'),
   getById: (id) => axiosInstance.get(`/users/${id}`),
   update: (id, userData) => axiosInstance.put(`/users/${id}`, userData),
-  // Endpoints de admin (por implementar en backend)
-  updateRole: (id, role) => axiosInstance.put(`/admin/users/${id}/role`, { role }),
-  activate: (id) => axiosInstance.put(`/admin/users/${id}/activate`),
-  deactivate: (id) => axiosInstance.put(`/admin/users/${id}/deactivate`),
+  // Endpoints de admin
+  updateRole: (id, role) => axiosInstance.put(`/admin/users/role`, { id, newRole: role }),
+  activate: (id) => axiosInstance.put(`/admin/users/activate`, { id }),
+  deactivate: (id) => axiosInstance.put(`/admin/users/deactivate`, { id }),
   resetPassword: (id) => axiosInstance.put(`/admin/users/${id}/reset-password`),
 };

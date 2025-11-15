@@ -10,6 +10,7 @@ const AdminServices = () => {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState({ name: '', price: '', duration: '', description: '', active: true });
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const navigation = [
     { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -46,7 +47,14 @@ const AdminServices = () => {
 
   const openEdit = (s) => {
     setEditing(s);
-    setFormData({ name: s.name || '', price: s.price || '', duration: s.duration || '', description: s.description || '', active: s.active ?? true });
+    setFormData({ 
+      name: s.name || '', 
+      price: s.price || '', 
+      duration: s.durationMinutes || '', // ✅ Cambio: leer durationMinutes
+      description: s.description || '', 
+      requiresVeterinarian: s.requiresVeterinarian || false, // ✅ Cambio: agregar requiresVeterinarian
+      active: s.active ?? true 
+    });
     setShowModal(true);
   };
 
@@ -68,10 +76,14 @@ const AdminServices = () => {
   };
 
   const handleDelete = async (s) => {
-    if (!confirm(`¿Eliminar servicio "${s.name}"?`)) return;
+    setDeleteConfirm(s);
+  };
+
+  const confirmDelete = async () => {
     try {
-      await serviceApi.remove(s.id);
+      await serviceApi.remove(deleteConfirm.id);
       setFeedback({ type: 'success', message: 'Servicio eliminado' });
+      setDeleteConfirm(null);
       load();
     } catch (e) {
       setFeedback({ type: 'error', message: 'No se pudo eliminar' });
@@ -80,8 +92,27 @@ const AdminServices = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validación
+    if (!formData.name.trim()) {
+      setFeedback({ type: 'error', message: 'El nombre es requerido' });
+      return;
+    }
+    if (!formData.price || Number(formData.price) <= 0) {
+      setFeedback({ type: 'error', message: 'El precio debe ser mayor a 0' });
+      return;
+    }
+
     try {
-      const payload = { ...formData, price: Number(formData.price) };
+      const payload = {
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        price: parseFloat(formData.price),
+        durationMinutes: formData.duration ? parseInt(formData.duration) : 0, // ✅ Cambio: durationMinutes
+        requiresVeterinarian: formData.requiresVeterinarian || false, // ✅ Cambio: agregar requiresVeterinarian
+        active: formData.active,
+      };
+      
       if (editing) {
         await serviceApi.update(editing.id, payload);
         setFeedback({ type: 'success', message: 'Servicio actualizado' });
@@ -140,11 +171,11 @@ const AdminServices = () => {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-600 border-b">
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">Precio</th>
-                  <th className="px-4 py-3">Duración</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">shopping_bag</span>Nombre</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">attach_money</span>Precio</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">schedule</span>Duración</th>
+                  <th className="px-4 py-3"><span className="material-icons inline align-middle text-base mr-2">check_circle</span>Estado</th>
+                  <th className="px-4 py-3 text-center"><span className="material-icons inline align-middle text-base mr-2">tune</span>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,14 +183,14 @@ const AdminServices = () => {
                   <tr key={s.id} className="border-b last:border-0">
                     <td className="px-4 py-3 font-medium text-gray-800">{s.name}</td>
                     <td className="px-4 py-3">${s.price}</td>
-                    <td className="px-4 py-3">{s.duration ? `${s.duration} min` : '—'}</td>
+                    <td className="px-4 py-3">{s.durationMinutes ? `${s.durationMinutes} min` : '—'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${(s.active ?? true) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700'}`}>
                         {(s.active ?? true) ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex justify-center gap-2">
                         <button onClick={() => openEdit(s)} className="px-3 py-1.5 text-teal hover:bg-teal/10 rounded-md">Editar</button>
                         <button onClick={() => toggleActive(s)} className={`px-3 py-1.5 rounded-md ${s.active ?? true ? 'text-yellow-700 hover:bg-yellow-50' : 'text-green-700 hover:bg-green-50'}`}>{(s.active ?? true) ? 'Desactivar' : 'Activar'}</button>
                         <button onClick={() => handleDelete(s)} className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-md">Eliminar</button>
@@ -169,6 +200,19 @@ const AdminServices = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-2">Confirmar eliminación</h2>
+              <p className="text-gray-600 mb-6">¿Estás seguro de que deseas borrar el servicio <span className="font-semibold">"{deleteConfirm.name}"</span>? Esta acción no se puede deshacer.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</button>
+                <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Eliminar</button>
+              </div>
+            </div>
           </div>
         )}
 
