@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { serviceApi } from '../../api/services';
+import { serviceApi, appointmentApi } from '../../api/services';
+
+const NON_BLOCKING_STATUSES = ['CANCELADA', 'CANCELLED', 'COMPLETED', 'COMPLETADA', 'FINALIZADA'];
+const isBlockingAppointmentStatus = (status) => {
+  const normalized = (status || '').toUpperCase();
+  return !NON_BLOCKING_STATUSES.includes(normalized);
+};
 
 const AdminServices = () => {
   const [loading, setLoading] = useState(true);
@@ -58,20 +64,58 @@ const AdminServices = () => {
     setShowModal(true);
   };
 
+  const buildServicePayload = (service, overrides = {}) => ({
+    name: service.name || '',
+    description: service.description || '',
+    price: Number(service.price) || 0,
+    durationMinutes: Number(service.durationMinutes) || 0,
+    requiresVeterinarian: service.requiresVeterinarian ?? false,
+    active: overrides.active ?? (service.active ?? true),
+  });
+
+  const fetchAppointmentsSafe = async (params) => {
+    try {
+      const res = await appointmentApi.getAllAdmin(params);
+      return res.data || [];
+    } catch (e) {
+      if (e.response?.status === 403) {
+        const fallback = await appointmentApi.getAll();
+        return fallback.data || [];
+      }
+      throw e;
+    }
+  };
+
+  const hasBlockingAppointmentsForService = async (service) => {
+    const appointments = await fetchAppointmentsSafe({ serviceId: service.id });
+    return appointments
+      .filter(ap => String(ap.service?.id || ap.serviceId) === String(service.id))
+      .some(ap => isBlockingAppointmentStatus(ap.status));
+  };
+
   const toggleActive = async (s) => {
     const newActive = !(s.active ?? true);
     try {
-      if (serviceApi.deactivate && !newActive) {
-        await serviceApi.deactivate(s.id);
-      } else if (serviceApi.activate && newActive) {
-        await serviceApi.activate(s.id);
+      if (!newActive) {
+        const blocked = await hasBlockingAppointmentsForService(s);
+        if (blocked) {
+          setFeedback({ type: 'error', message: 'No puedes desactivar un servicio con citas pendientes o en curso' });
+          return;
+        }
+        if (serviceApi.deactivate) {
+          await serviceApi.deactivate(s.id);
+        } else {
+          const payload = buildServicePayload(s, { active: newActive });
+          await serviceApi.update(s.id, payload);
+        }
       } else {
-        await serviceApi.update(s.id, { active: newActive });
+        const payload = buildServicePayload(s, { active: newActive });
+        await serviceApi.update(s.id, payload);
       }
       setFeedback({ type: 'success', message: newActive ? 'Servicio activado' : 'Servicio desactivado' });
       load();
     } catch (e) {
-      setFeedback({ type: 'error', message: 'No se pudo cambiar el estado' });
+      setFeedback({ type: 'error', message: e.response?.data?.message || 'No se pudo cambiar el estado' });
     }
   };
 

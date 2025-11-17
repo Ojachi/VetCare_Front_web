@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import ServiceSelector from '../../components/ServiceSelector';
 import { appointmentApi, petApi, serviceApi } from '../../api/services';
@@ -22,6 +22,18 @@ const OwnerAppointments = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const activeServices = useMemo(() => (
+    (services || []).filter(s => s.active ?? true)
+  ), [services]);
+
+  useEffect(() => {
+    if (!formData.serviceId) return;
+    const serviceStillActive = activeServices.some(s => String(s.id) === String(formData.serviceId));
+    if (!serviceStillActive) {
+      setFormData(prev => ({ ...prev, serviceId: '' }));
+    }
+  }, [activeServices, formData.serviceId]);
 
   const loadData = async () => {
     try {
@@ -162,7 +174,7 @@ const OwnerAppointments = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
                   <ServiceSelector
-                    services={services}
+                    services={activeServices}
                     value={formData.serviceId}
                     onChange={(serviceId) => setFormData({ ...formData, serviceId })}
                     required

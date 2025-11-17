@@ -29,8 +29,13 @@ const AdminAppointments = () => {
     { path: '/admin/appointments', icon: 'event', label: 'Citas' },
   ];
 
-  const owners = useMemo(() => (users || []).filter(u => u.role === 'OWNER'), [users]);
+  const owners = useMemo(() => (
+    (users || []).filter(u => u.role === 'OWNER' && (u.active ?? u.enabled ?? true))
+  ), [users]);
   const veterinarians = useMemo(() => (users || []).filter(u => u.role === 'VETERINARIAN'), [users]);
+  const activeServices = useMemo(() => (
+    (services || []).filter(s => s.active ?? true)
+  ), [services]);
   const petsByOwner = useMemo(() => {
     if (!formData.ownerId) return [];
     return pets.filter(p => {
@@ -40,6 +45,22 @@ const AdminAppointments = () => {
   }, [pets, formData.ownerId]);
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!formData.ownerId) return;
+    const ownerStillActive = owners.some(o => String(o.id) === String(formData.ownerId));
+    if (!ownerStillActive) {
+      setFormData(prev => ({ ...prev, ownerId: '', petId: '' }));
+    }
+  }, [owners, formData.ownerId]);
+
+  useEffect(() => {
+    if (!formData.serviceId) return;
+    const serviceStillActive = activeServices.some(s => String(s.id) === String(formData.serviceId));
+    if (!serviceStillActive) {
+      setFormData(prev => ({ ...prev, serviceId: '' }));
+    }
+  }, [activeServices, formData.serviceId]);
 
   const load = async () => {
     setLoading(true);
@@ -61,11 +82,37 @@ const AdminAppointments = () => {
     }
   };
 
+  const STATUS_CONFIG = useMemo(() => ({
+    PENDING: { label: 'Pendiente', badge: 'bg-yellow-100 text-yellow-800' },
+    ACCEPTED: { label: 'Confirmada', badge: 'bg-blue-100 text-blue-800' },
+    COMPLETED: { label: 'Completada', badge: 'bg-green-100 text-green-800' },
+    CANCELLED: { label: 'Cancelada', badge: 'bg-red-100 text-red-800' },
+  }), []);
+
+  const statusOptions = useMemo(() => ([
+    { value: 'ALL', label: 'Todos' },
+    { value: 'PENDING', label: 'Pendiente' },
+    { value: 'ACCEPTED', label: 'Confirmada' },
+    { value: 'COMPLETED', label: 'Completada' },
+    { value: 'CANCELLED', label: 'Cancelada' },
+  ]), []);
+
+  const normalizeStatus = (status) => (status || '').toUpperCase();
+
   const filteredAppointments = useMemo(() => {
     let list = appointments;
-    if (filters.status !== 'ALL') list = list.filter(a => a.status === filters.status);
-    if (filters.date) list = list.filter(a => (a.datetime || a.date)?.startsWith(filters.date));
-    if (filters.veterinarianId !== 'ALL') list = list.filter(a => (a.veterinarian?.id || a.veterinarianId) === filters.veterinarianId);
+    if (filters.status !== 'ALL') {
+      list = list.filter(a => normalizeStatus(a.status) === filters.status);
+    }
+    if (filters.date) {
+      list = list.filter(a => (a.startDateTime || a.datetime || a.date || '').startsWith(filters.date));
+    }
+    if (filters.veterinarianId !== 'ALL') {
+      list = list.filter(a => {
+        const vetId = a.assignedTo?.id || a.assignedToId || a.veterinarian?.id;
+        return vetId && String(vetId) === String(filters.veterinarianId);
+      });
+    }
     return list;
   }, [appointments, filters]);
 
@@ -155,11 +202,9 @@ const AdminAppointments = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
               <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
-                <option value="ALL">Todos</option>
-                <option value="PENDIENTE">Pendiente</option>
-                <option value="CONFIRMADA">Confirmada</option>
-                <option value="COMPLETADA">Completada</option>
-                <option value="CANCELADA">Cancelada</option>
+                {statusOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -188,12 +233,17 @@ const AdminAppointments = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredAppointments.map(ap => (
+            {filteredAppointments.map(ap => {
+              const currentStatus = normalizeStatus(ap.status);
+              const canManage = ['PENDING', 'PENDIENTE'].includes(currentStatus);
+              return (
               <div key={ap.id} className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${ap.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' : ap.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-800' : ap.status === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{ap.status}</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${STATUS_CONFIG[currentStatus]?.badge || 'bg-gray-100 text-gray-800'}`}>
+                        {STATUS_CONFIG[currentStatus]?.label || ap.status}
+                      </span>
                       <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                       <span className="text-sm text-gray-500">{new Date(ap.startDateTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
@@ -211,17 +261,17 @@ const AdminAppointments = () => {
                       </select>
                     </div>
                     <div className="flex gap-2">
-                      {ap.status === 'PENDIENTE' && (
+                      {canManage && (
                         <button onClick={() => handleConfirm(ap.id)} className="px-3 py-1.5 text-sm text-teal hover:bg-teal/10 rounded-md">Confirmar</button>
                       )}
-                      {ap.status !== 'CANCELADA' && (
+                      {canManage && (
                         <button onClick={() => handleCancel(ap.id)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md">Cancelar</button>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
 
@@ -251,7 +301,7 @@ const AdminAppointments = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
                   <ServiceSelector
-                    services={services}
+                    services={activeServices}
                     value={formData.serviceId}
                     onChange={(serviceId) => setFormData({ ...formData, serviceId })}
                     required

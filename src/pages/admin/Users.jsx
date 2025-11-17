@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { userApi } from '../../api/services';
+import { userApi, appointmentApi } from '../../api/services';
 
 const roleMap = {
   'OWNER': 'Dueño',
   'ADMIN': 'Administrador',
   'VETERINARIAN': 'Veterinario',
   'EMPLOYEE': 'Empleado',
+};
+
+const NON_BLOCKING_STATUSES = ['CANCELADA', 'CANCELLED', 'COMPLETED', 'COMPLETADA', 'FINALIZADA'];
+const isBlockingAppointmentStatus = (status) => {
+  const normalized = (status || '').toUpperCase();
+  return !NON_BLOCKING_STATUSES.includes(normalized);
 };
 
 const AdminUsers = () => {
@@ -63,12 +69,53 @@ const AdminUsers = () => {
     }
   };
 
+  const fetchAppointmentsSafe = async (params) => {
+    try {
+      const res = await appointmentApi.getAllAdmin(params);
+      return res.data || [];
+    } catch (e) {
+      if (e.response?.status === 403) {
+        const fallback = await appointmentApi.getAll();
+        return fallback.data || [];
+      }
+      throw e;
+    }
+  };
+
+  const hasBlockingAppointmentsForUser = async (userObj) => {
+    if (!['OWNER', 'VETERINARIAN'].includes(userObj.role)) return false;
+    const params = userObj.role === 'VETERINARIAN'
+      ? { assignedToId: userObj.id }
+      : { ownerId: userObj.id };
+
+    const appointments = await fetchAppointmentsSafe(params);
+    return appointments
+      .filter(ap => {
+        if (userObj.role === 'VETERINARIAN') {
+          const vetId = ap.assignedTo?.id || ap.assignedToId || ap.veterinarian?.id;
+          return String(vetId) === String(userObj.id);
+        }
+        const ownerId = ap.pet?.owner?.id || ap.owner?.id;
+        return String(ownerId) === String(userObj.id);
+      })
+      .some(ap => isBlockingAppointmentStatus(ap.status));
+  };
+
   const toggleActive = async (userObj) => {
     const newActive = !(userObj.active ?? userObj.enabled ?? true);
     try {
-      if (newActive === false && userApi.deactivate) {
-        await userApi.deactivate(userObj.id);
-      } else if (userApi.activate && newActive === true) {
+      if (!newActive) {
+        const blocked = await hasBlockingAppointmentsForUser(userObj);
+        if (blocked) {
+          setFeedback({ type: 'error', message: 'No puedes desactivar dueños o veterinarios con citas pendientes o en curso' });
+          return;
+        }
+        if (userApi.deactivate) {
+          await userApi.deactivate(userObj.id);
+        } else {
+          await userApi.update(userObj.id, { active: newActive });
+        }
+      } else if (userApi.activate) {
         await userApi.activate(userObj.id);
       } else {
         await userApi.update(userObj.id, { active: newActive });
