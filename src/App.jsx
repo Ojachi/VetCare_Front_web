@@ -20,6 +20,7 @@ import AdminAppointments from './pages/admin/Appointments';
 import VeterinarianDashboard from './pages/veterinarian/Dashboard';
 import VeterinarianAppointments from './pages/veterinarian/Appointments';
 import VeterinarianDiagnosis from './pages/veterinarian/Diagnosis';
+import Profile from './pages/Profile';
 import Navbar from './components/navbar';
 import './App.css';
 
@@ -117,6 +118,16 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['VETERINARIAN']}>
                 <VeterinarianDiagnosis />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Profile */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

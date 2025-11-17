@@ -20,22 +20,26 @@ const DashboardLayout = ({ children, navigation }) => {
       { path: '/owner/pets', icon: 'pets', label: 'Mis Mascotas' },
       { path: '/owner/appointments', icon: 'event', label: 'Mis Citas' },
       { path: '/owner/history', icon: 'history', label: 'Historial Médico' },
+      { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
     ],
     EMPLOYEE: [
       { path: '/employee/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/employee/pets', icon: 'pets', label: 'Mascotas' },
       { path: '/employee/appointments', icon: 'event', label: 'Citas' },
+      { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
     ],
     VETERINARIAN: [
       { path: '/veterinarian/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/veterinarian/appointments', icon: 'event', label: 'Citas' },
       { path: '/veterinarian/diagnoses', icon: 'medical_services', label: 'Diagnósticos' },
+      { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
     ],
     ADMIN: [
       { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/admin/users', icon: 'groups', label: 'Usuarios' },
       { path: '/admin/services', icon: 'build', label: 'Servicios' },
       { path: '/admin/appointments', icon: 'event', label: 'Citas' },
+      { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
     ],
   }), []);
 
@@ -62,10 +66,18 @@ const DashboardLayout = ({ children, navigation }) => {
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-800">{user?.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role?.toLowerCase()}</p>
-              </div>
+              <button
+                onClick={() => navigate('/profile')}
+                className="text-left hidden sm:block"
+              >
+                <p className="text-sm font-medium text-gray-800 hover:text-teal transition-colors">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-gray-500 capitalize flex items-center gap-1">
+                  {user?.role?.toLowerCase()}
+                  <span className="material-icons text-xs text-teal">chevron_right</span>
+                </p>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
