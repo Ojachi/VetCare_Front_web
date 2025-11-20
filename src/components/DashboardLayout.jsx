@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 import logo from '../assets/icon_dog.svg';
-import ChatWidget from './ChatWidget';
 
 const DashboardLayout = ({ children, navigation }) => {
   const { user, logout } = useAuth();
@@ -38,7 +37,6 @@ const DashboardLayout = ({ children, navigation }) => {
     ADMIN: [
       { path: '/admin/dashboard', icon: 'dashboard', label: 'Dashboard' },
       { path: '/admin/users', icon: 'groups', label: 'Usuarios' },
-      { path: '/admin/pets', icon: 'pets', label: 'Mascotas' },
       { path: '/admin/services', icon: 'build', label: 'Servicios' },
       { path: '/admin/appointments', icon: 'event', label: 'Citas' },
       { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
@@ -105,8 +103,6 @@ const DashboardLayout = ({ children, navigation }) => {
           {children}
         </main>
       </div>
-
-      {user?.role === 'OWNER' && <ChatWidget />}
     </div>
   );
 };

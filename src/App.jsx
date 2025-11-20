@@ -17,7 +17,6 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminServices from './pages/admin/Services';
 import AdminAppointments from './pages/admin/Appointments';
-import AdminPets from './pages/admin/Pets';
 import VeterinarianDashboard from './pages/veterinarian/Dashboard';
 import VeterinarianAppointments from './pages/veterinarian/Appointments';
 import VeterinarianDiagnosis from './pages/veterinarian/Diagnosis';
@@ -156,14 +155,6 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <AdminServices />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/pets"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminPets />
               </ProtectedRoute>
             }
           />
