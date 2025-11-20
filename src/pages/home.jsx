@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Footer from '../components/footer';
 import ServiceCard from '../components/ServiceCard';
 import TestimonialCard from '../components/TestimonialCard';
+import ChatWidget from '../components/ChatWidget';
 
 const Home = () => {
   return (
@@ -91,6 +92,7 @@ const Home = () => {
       </section>
 
       <Footer />
+      <ChatWidget />
     </div>
   );
 };

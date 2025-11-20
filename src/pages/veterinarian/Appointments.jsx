@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { appointmentApi, diagnosisApi } from '../../api/services';
 import { useAuth } from '../../context/AuthContext';
 
@@ -37,7 +38,7 @@ const VeterinarianAppointments = () => {
   };
 
   const statusOptions = [
-    { value: 'ALL', label: 'Todos' },
+    { value: 'ALL', label: 'Todos los estados' },
     { value: 'PENDING', label: 'Pendiente' },
     { value: 'ACCEPTED', label: 'Confirmada' },
     { value: 'COMPLETED', label: 'Completada' },
@@ -252,7 +253,10 @@ const VeterinarianAppointments = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Citas Asignadas</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">event_available</span>
+              <h1 className="text-3xl font-bold text-gray-800">Citas Asignadas</h1>
+            </div>
             <p className="text-gray-600 mt-2">Gestiona y atiende tus citas</p>
           </div>
         </div>
@@ -265,11 +269,15 @@ const VeterinarianAppointments = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
-                {statusOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={statusOptions}
+                value={filters.status}
+                onChange={(val) => setFilters({ ...filters, status: val || 'ALL' })}
+                placeholder="Filtrar por estado"
+                valueKey="value"
+                getOptionLabel={(opt) => opt.label}
+                sort={false}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>

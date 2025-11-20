@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { petApi } from '../../api/services';
+import SearchableDropdown from '../../components/SearchableDropdown';
+import { petApi, userApi } from '../../api/services';
 
 const EmployeePets = () => {
   const [loading, setLoading] = useState(true);
   const [pets, setPets] = useState([]);
+  const [owners, setOwners] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [feedback, setFeedback] = useState(null);
@@ -17,8 +19,18 @@ const EmployeePets = () => {
     age: '',
     weight: '',
     sex: '',
-    color: '',
+    ownerId: '',
   });
+
+  const sexOptions = useMemo(() => ([
+    { value: 'M', label: 'Macho' },
+    { value: 'F', label: 'Hembra' },
+  ]), []);
+
+const ownerOptions = useMemo(() => ([
+  { id: '', name: 'Selecciona un dueño', email: '' },
+  ...owners,
+]), [owners]);
 
   const navigation = [
     { path: '/employee/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -33,9 +45,14 @@ const EmployeePets = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const petsRes = await petApi.getAll();
+      const [petsRes, ownersRes] = await Promise.all([
+        petApi.getAll(),
+        userApi.getAll ? userApi.getAll() : Promise.resolve({ data: [] }),
+      ]);
       setPets(petsRes.data || []);
+      setOwners((ownersRes.data || []).filter(u => u.role === 'OWNER'));
     } catch (e) {
+      console.error('Error al cargar datos de mascotas:', e);
       setFeedback({ type: 'error', message: 'Error al cargar datos' });
     } finally {
       setLoading(false);
@@ -53,6 +70,20 @@ const EmployeePets = () => {
     );
   }, [pets, query]);
 
+  const openCreate = () => {
+    setEditing(null);
+    setFormData({
+      name: '',
+      species: '',
+      breed: '',
+      age: '',
+      weight: '',
+      sex: '',
+      ownerId: '',
+    });
+    setShowModal(true);
+  };
+
   const openEdit = (pet) => {
     setEditing(pet);
     setFormData({
@@ -62,7 +93,7 @@ const EmployeePets = () => {
       age: pet.age || '',
       weight: pet.weight || '',
       sex: pet.sex || '',
-      color: pet.color || '',
+      ownerId: pet.owner?.id || '',
     });
     setShowModal(true);
   };
@@ -81,14 +112,20 @@ const EmployeePets = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Solo permitir edición, no creación
       if (editing) {
         await petApi.update(editing.id, { ...formData });
         setFeedback({ type: 'success', message: 'Mascota actualizada' });
-        setShowModal(false);
-        setEditing(null);
-        load();
+      } else {
+        if (!formData.ownerId) {
+          setFeedback({ type: 'error', message: 'Selecciona un dueño para registrar la mascota' });
+          return;
+        }
+        await petApi.create({ ...formData, ownerId: formData.ownerId });
+        setFeedback({ type: 'success', message: 'Mascota registrada' });
       }
+      setShowModal(false);
+      setEditing(null);
+      load();
     } catch (e) {
       setFeedback({ type: 'error', message: e.response?.data?.message || 'Error al guardar' });
     }
@@ -97,11 +134,18 @@ const EmployeePets = () => {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Mascotas</h1>
-            <p className="text-gray-600 mt-2">Consulta y edita la información de las mascotas</p>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">pets</span>
+              <h1 className="text-3xl font-bold text-gray-800">Mascotas</h1>
+            </div>
+            <p className="text-gray-600 mt-2">Consulta, registra y edita la información de las mascotas</p>
           </div>
+          <button onClick={openCreate} className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg">
+            <span className="material-icons">add</span>
+            <span>Nueva Mascota</span>
+          </button>
         </div>
 
         {feedback && (
@@ -171,17 +215,33 @@ const EmployeePets = () => {
         {showModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Editar Mascota</h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">{editing ? 'Editar Mascota' : 'Registrar Mascota'}</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Dueño</label>
-                  <input 
-                    type="text" 
-                    value={editing?.owner?.name || 'Sin asignar'} 
-                    disabled 
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm bg-gray-50 text-gray-600"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">No se puede cambiar el dueño</p>
+                  {editing ? (
+                    <>
+                      <input 
+                        type="text" 
+                        value={editing?.owner?.name || 'Sin asignar'} 
+                        disabled 
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm bg-gray-50 text-gray-600"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">No se puede cambiar el dueño</p>
+                    </>
+                  ) : (
+                    <SearchableDropdown
+                      options={ownerOptions}
+                      value={formData.ownerId}
+                      onChange={(ownerId) => setFormData({ ...formData, ownerId: ownerId || '' })}
+                      placeholder="Selecciona un dueño"
+                      required
+                      getOptionLabel={(owner) => owner?.name || owner?.email || 'Selecciona un dueño'}
+                      getOptionSecondary={(owner) => owner?.email}
+                      getSearchableText={(owner) => `${owner?.name || ''} ${owner?.email || ''}`}
+                      sort
+                    />
+                  )}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -198,16 +258,16 @@ const EmployeePets = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                    <select 
+                    <SearchableDropdown
+                      options={sexOptions}
+                      value={formData.sex}
+                      onChange={(val) => setFormData({ ...formData, sex: val || '' })}
+                      placeholder="Seleccionar sexo"
                       required
-                      value={formData.sex} 
-                      onChange={e => setFormData({ ...formData, sex: e.target.value })} 
-                      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
-                    >
-                      <option value="">Seleccionar</option>
-                      <option value="M">Macho</option>
-                      <option value="F">Hembra</option>
-                    </select>
+                      valueKey="value"
+                      getOptionLabel={(opt) => opt.label}
+                      sort={false}
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Edad</label>
@@ -217,10 +277,7 @@ const EmployeePets = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Peso</label>
                     <input type="number" min="0" step="0.01" value={formData.weight} onChange={e => setFormData({ ...formData, weight: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal" />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                    <input value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal" />
-                  </div>
+
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</button>

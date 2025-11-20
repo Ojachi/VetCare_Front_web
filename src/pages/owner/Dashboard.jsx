@@ -43,7 +43,10 @@ const OwnerDashboard = () => {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Bienvenido, {user?.name}</h1>
+          <div className="flex items-center gap-3">
+            <span className="material-icons text-teal text-4xl" aria-hidden="true">dashboard</span>
+            <h1 className="text-3xl font-bold text-gray-800">Bienvenido, {user?.name}</h1>
+          </div>
           <p className="text-gray-600 mt-2">Gestiona la salud de tus mascotas desde aquí</p>
         </div>
 

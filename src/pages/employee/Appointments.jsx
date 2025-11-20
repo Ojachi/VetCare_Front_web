@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { appointmentApi } from '../../api/services';
 
 const EmployeeAppointments = () => {
@@ -7,6 +8,17 @@ const EmployeeAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const [filters, setFilters] = useState({ status: 'ALL', date: '' });
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', time: '' });
+
+  const statusOptions = useMemo(() => ([
+    { value: 'ALL', label: 'Todos los estados' },
+    { value: 'PENDING', label: 'Pendiente' },
+    { value: 'ACCEPTED', label: 'Confirmada' },
+    { value: 'COMPLETED', label: 'Completada' },
+    { value: 'CANCELLED', label: 'Cancelada' },
+  ]), []);
 
   const navigation = [
     { path: '/employee/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -24,6 +36,64 @@ const EmployeeAppointments = () => {
     });
     return Array.from(vetsMap.values());
   }, [appointments]);
+
+  const assignableVeterinarians = useMemo(() => ([
+    { id: '', name: 'Asignar veterinario', email: '' },
+    ...veterinarians,
+  ]), [veterinarians]);
+
+  const canReschedule = (status) => ['PENDING', 'ACCEPTED'].includes(status);
+
+  const toInputDate = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const offset = date.getTimezoneOffset();
+    const local = new Date(date.getTime() - offset * 60000);
+    return local.toISOString().split('T')[0];
+  };
+
+  const toInputTime = (iso) => {
+    if (!iso) return '';
+    const date = new Date(iso);
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const openReschedule = (appointment) => {
+    setRescheduleTarget(appointment);
+    setRescheduleForm({
+      date: toInputDate(appointment.startDateTime),
+      time: toInputTime(appointment.startDateTime),
+    });
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSubmit = async (e) => {
+    e.preventDefault();
+    if (!rescheduleTarget) return;
+    if (!rescheduleForm.date || !rescheduleForm.time) {
+      setFeedback({ type: 'error', message: 'Selecciona fecha y hora válidas.' });
+      return;
+    }
+
+    try {
+      const payload = {
+        petId: rescheduleTarget.pet?.id || rescheduleTarget.petId,
+        serviceId: rescheduleTarget.service?.id || rescheduleTarget.serviceId,
+        assignedToId: rescheduleTarget.assignedTo?.id || rescheduleTarget.assignedToId || null,
+        startDateTime: `${rescheduleForm.date}T${rescheduleForm.time}`,
+        note: rescheduleTarget.note || '',
+      };
+      await appointmentApi.update(rescheduleTarget.id, payload);
+      setFeedback({ type: 'success', message: 'Cita reprogramada correctamente.' });
+      setShowRescheduleModal(false);
+      setRescheduleTarget(null);
+      load();
+    } catch (error) {
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'No se pudo reprogramar la cita' });
+    }
+  };
 
   useEffect(() => {
     load();
@@ -120,7 +190,10 @@ const EmployeeAppointments = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">event</span>
+              <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
+            </div>
             <p className="text-gray-600 mt-2">Gestiona y confirma las citas del sistema</p>
           </div>
         </div>
@@ -133,13 +206,15 @@ const EmployeeAppointments = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
-                <option value="ALL">Todos</option>
-                <option value="PENDING">Pendiente</option>
-                <option value="ACCEPTED">Confirmada</option>
-                <option value="COMPLETED">Completada</option>
-                <option value="CANCELLED">Cancelada</option>
-              </select>
+              <SearchableDropdown
+                options={statusOptions}
+                value={filters.status}
+                onChange={(val) => setFilters({ ...filters, status: val || 'ALL' })}
+                placeholder="Filtrar por estado"
+                valueKey="value"
+                getOptionLabel={(opt) => opt.label}
+                sort={false}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -174,26 +249,93 @@ const EmployeeAppointments = () => {
                     <p className="text-sm text-gray-600">Veterinario: {ap.assignedTo?.name || 'Por asignar'}</p>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
-                    <div className="flex items-center gap-2">
-                      <select value={ap.assignedTo?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
-                        <option value="">Asignar Veterinario</option>
-                        {veterinarians.map(v => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                      </select>
+                    <div className="flex items-center gap-2 w-48">
+                      <SearchableDropdown
+                        options={assignableVeterinarians}
+                        value={ap.assignedTo?.id || ''}
+                        onChange={(val) => handleAssignVet(ap.id, val || '')}
+                        placeholder="Asignar veterinario"
+                        getOptionLabel={(vet) => vet?.name || 'Sin asignar'}
+                        getOptionSecondary={(vet) => vet?.email || ''}
+                        getSearchableText={(vet) => `${vet?.name || ''} ${vet?.email || ''}`}
+                        sort={false}
+                      />
                     </div>
-                    <div className="flex gap-2">
-                      {ap.status === 'PENDING' && (
-                        <button onClick={() => handleConfirm(ap.id)} className="px-3 py-1.5 text-sm text-teal hover:bg-teal/10 rounded-md">Confirmar</button>
-                      )}
-                      {ap.status !== 'CANCELLED' && (
-                        <button onClick={() => handleCancel(ap.id)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md">Cancelar</button>
-                      )}
-                    </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          {ap.status === 'PENDING' && (
+                            <button onClick={() => handleConfirm(ap.id)} className="px-3 py-1.5 text-sm text-teal hover:bg-teal/10 rounded-md">Confirmar</button>
+                          )}
+                          {ap.status !== 'CANCELLED' && (
+                            <button onClick={() => handleCancel(ap.id)} className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md">Cancelar</button>
+                          )}
+                        </div>
+                        {canReschedule(ap.status) && (
+                          <button
+                            onClick={() => openReschedule(ap)}
+                            className="px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-md"
+                          >
+                            Reprogramar
+                          </button>
+                        )}
+                      </div>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+        {showRescheduleModal && rescheduleTarget && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Reprogramar cita</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                {rescheduleTarget.pet?.name} — {rescheduleTarget.service?.name}
+              </p>
+              <form onSubmit={handleRescheduleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nueva fecha</label>
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={rescheduleForm.date}
+                      onChange={(e) => setRescheduleForm(prev => ({ ...prev, date: e.target.value }))}
+                      required
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nueva hora</label>
+                    <input
+                      type="time"
+                      value={rescheduleForm.time}
+                      onChange={(e) => setRescheduleForm(prev => ({ ...prev, time: e.target.value }))}
+                      required
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowRescheduleModal(false);
+                      setRescheduleTarget(null);
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg"
+                  >
+                    Guardar cambios
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

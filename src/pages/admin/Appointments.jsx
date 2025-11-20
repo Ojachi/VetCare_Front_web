@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import ServiceSelector from '../../components/ServiceSelector';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { appointmentApi, serviceApi, userApi, petApi } from '../../api/services';
 
 const AdminAppointments = () => {
@@ -10,7 +11,7 @@ const AdminAppointments = () => {
   const [users, setUsers] = useState([]);
   const [pets, setPets] = useState([]);
   const [feedback, setFeedback] = useState(null);
-  const [filters, setFilters] = useState({ status: 'ALL', date: '', veterinarianId: 'ALL' });
+  const [filters, setFilters] = useState({ status: 'ALL', date: '', veterinarianId: 'ALL', serviceId: 'ALL' });
   const [showModal, setShowModal] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -90,12 +91,27 @@ const AdminAppointments = () => {
   }), []);
 
   const statusOptions = useMemo(() => ([
-    { value: 'ALL', label: 'Todos' },
+    { value: 'ALL', label: 'Todos los estados' },
     { value: 'PENDING', label: 'Pendiente' },
     { value: 'ACCEPTED', label: 'Confirmada' },
     { value: 'COMPLETED', label: 'Completada' },
     { value: 'CANCELLED', label: 'Cancelada' },
   ]), []);
+
+  const veterinarianFilterOptions = useMemo(() => ([
+    { id: 'ALL', name: 'Todos los veterinarios', email: '' },
+    ...veterinarians,
+  ]), [veterinarians]);
+
+  const serviceFilterOptions = useMemo(() => ([
+    { id: 'ALL', name: 'Todos los servicios' },
+    ...services,
+  ]), [services]);
+
+  const assignableVeterinarians = useMemo(() => ([
+    { id: '', name: 'Sin asignar', email: '' },
+    ...veterinarians,
+  ]), [veterinarians]);
 
   const normalizeStatus = (status) => (status || '').toUpperCase();
 
@@ -111,6 +127,12 @@ const AdminAppointments = () => {
       list = list.filter(a => {
         const vetId = a.assignedTo?.id || a.assignedToId || a.veterinarian?.id;
         return vetId && String(vetId) === String(filters.veterinarianId);
+      });
+    }
+    if (filters.serviceId !== 'ALL') {
+      list = list.filter(a => {
+        const serviceId = a.service?.id || a.serviceId;
+        return serviceId && String(serviceId) === String(filters.serviceId);
       });
     }
     return list;
@@ -184,7 +206,10 @@ const AdminAppointments = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">event</span>
+              <h1 className="text-3xl font-bold text-gray-800">Citas</h1>
+            </div>
             <p className="text-gray-600 mt-2">Gestiona todas las citas del sistema</p>
           </div>
           <button onClick={() => setShowModal(true)} className="flex items-center gap-2 px-4 py-2 bg-teal text-white rounded-lg shadow-teal-sm hover:shadow-teal-lg">
@@ -201,11 +226,15 @@ const AdminAppointments = () => {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
-                {statusOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={statusOptions}
+                value={filters.status}
+                onChange={(val) => setFilters({ ...filters, status: val || 'ALL' })}
+                placeholder="Filtrar por estado"
+                valueKey="value"
+                getOptionLabel={(opt) => opt.label}
+                sort={false}
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -213,12 +242,28 @@ const AdminAppointments = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Veterinario</label>
-              <select value={filters.veterinarianId} onChange={e => setFilters({ ...filters, veterinarianId: e.target.value })} className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal">
-                <option value="ALL">Todos</option>
-                {veterinarians.map(v => (
-                  <option key={v.id} value={v.id}>{v.name}</option>
-                ))}
-              </select>
+              <SearchableDropdown
+                options={veterinarianFilterOptions}
+                value={filters.veterinarianId}
+                onChange={(val) => setFilters({ ...filters, veterinarianId: val || 'ALL' })}
+                placeholder="Filtrar por veterinario"
+                getOptionLabel={(vet) => vet?.name || 'Todos'}
+                getOptionSecondary={(vet) => vet?.email || ''}
+                getSearchableText={(vet) => `${vet?.name || ''} ${vet?.email || ''}`}
+                sort={false}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
+              <SearchableDropdown
+                options={serviceFilterOptions}
+                value={filters.serviceId}
+                onChange={(val) => setFilters({ ...filters, serviceId: val || 'ALL' })}
+                placeholder="Filtrar por servicio"
+                getOptionLabel={(service) => service?.name || 'Todos'}
+                getSearchableText={(service) => `${service?.name || ''} ${service?.description || ''}`}
+                sort={false}
+              />
             </div>
           </div>
         </div>
@@ -252,13 +297,17 @@ const AdminAppointments = () => {
                     <p className="text-sm text-gray-600">Veterinario: {ap.assignedTo?.name || 'Por asignar'}</p>
                   </div>
                   <div className="flex flex-col gap-2 items-end">
-                    <div className="flex items-center gap-2">
-                      <select value={ap.assignedTo?.id || ''} onChange={(e) => handleAssignVet(ap.id, e.target.value)} className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:ring-2 focus:ring-teal">
-                        <option value="">Asignar Veterinario</option>
-                        {veterinarians.map(v => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                      </select>
+                    <div className="flex items-center gap-2 w-48">
+                      <SearchableDropdown
+                        options={assignableVeterinarians}
+                        value={ap.assignedTo?.id || ''}
+                        onChange={(val) => handleAssignVet(ap.id, val || '')}
+                        placeholder="Asignar veterinario"
+                        getOptionLabel={(vet) => vet?.name || 'Sin asignar'}
+                        getOptionSecondary={(vet) => vet?.email || ''}
+                        getSearchableText={(vet) => `${vet?.name || ''} ${vet?.email || ''}`}
+                        sort={false}
+                      />
                     </div>
                     <div className="flex gap-2">
                       {canManage && (
@@ -282,21 +331,35 @@ const AdminAppointments = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Dueño</label>
-                  <select required value={formData.ownerId} onChange={e => setFormData({ ...formData, ownerId: e.target.value, petId: '' })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona un dueño</option>
-                    {owners.map(o => (
-                      <option key={o.id} value={o.id}>{o.name} ({o.email})</option>
-                    ))}
-                  </select>
+                  <SearchableDropdown
+                    options={owners}
+                    value={formData.ownerId}
+                    onChange={(ownerId) => setFormData({ ...formData, ownerId: ownerId || '', petId: '' })}
+                    placeholder="Selecciona un dueño"
+                    required
+                    getOptionLabel={(owner) => owner?.name || owner?.email || ''}
+                    getOptionSecondary={(owner) => owner?.email}
+                    getSearchableText={(owner) => `${owner?.name || ''} ${owner?.email || ''}`}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
-                  <select required value={formData.petId} onChange={e => setFormData({ ...formData, petId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Selecciona una mascota</option>
-                    {petsByOwner.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
+                  <SearchableDropdown
+                    options={petsByOwner}
+                    value={formData.petId}
+                    onChange={(petId) => setFormData({ ...formData, petId: petId || '' })}
+                    placeholder={formData.ownerId ? 'Selecciona una mascota' : 'Selecciona un dueño primero'}
+                    required
+                    disabled={!formData.ownerId || petsByOwner.length === 0}
+                    emptyStateMessage={() =>
+                      formData.ownerId
+                        ? 'Este dueño no tiene mascotas registradas'
+                        : 'Selecciona un dueño para ver sus mascotas'
+                    }
+                    getOptionLabel={(pet) => pet?.name || ''}
+                    getOptionSecondary={(pet) => pet?.breed || ''}
+                    getSearchableText={(pet) => `${pet?.name || ''} ${pet?.breed || ''}`}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
@@ -319,12 +382,16 @@ const AdminAppointments = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Veterinario (opcional)</label>
-                  <select value={formData.veterinarianId} onChange={e => setFormData({ ...formData, veterinarianId: e.target.value })} className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal">
-                    <option value="">Sin asignar</option>
-                    {veterinarians.map(v => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
-                    ))}
-                  </select>
+                  <SearchableDropdown
+                    options={assignableVeterinarians}
+                    value={formData.veterinarianId}
+                    onChange={(vetId) => setFormData({ ...formData, veterinarianId: vetId || '' })}
+                    placeholder="Asignar veterinario"
+                    getOptionLabel={(vet) => vet?.name || 'Sin asignar'}
+                    getOptionSecondary={(vet) => vet?.email || ''}
+                    getSearchableText={(vet) => `${vet?.name || ''} ${vet?.email || ''}`}
+                    sort={false}
+                  />
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancelar</button>

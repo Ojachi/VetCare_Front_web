@@ -18,6 +18,7 @@ export const authApi = {
   getCurrentUser: () => axiosInstance.get('/users/me'),
   logout: () => axiosInstance.post('/auth/logout'),
   updateProfile: (id, data) => axiosInstance.put(`/users/${id}`, data),
+  changePassword: (payload) => axiosInstance.put('/users/change-password', payload),
 };
 
 export const petApi = {
@@ -48,6 +49,11 @@ export const appointmentApi = {
   updateStatus: (id, status) => axiosInstance.put(`/appointments/${id}/status`, { status }),
   confirm: (id) => axiosInstance.put(`/appointments/${id}/status`, { status: 'ACCEPTED' }),
   complete: (id) => axiosInstance.put(`/appointments/${id}/status`, { status: 'COMPLETED' }),
+};
+
+export const chatApi = {
+  consult: (message) => axiosInstance.post('/chat/consult', { message: message?.trim() || '' }),
+  status: () => axiosInstance.get('/chat/status'),
 };
 
 export const serviceApi = {

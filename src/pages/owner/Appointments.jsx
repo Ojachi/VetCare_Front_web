@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import ServiceSelector from '../../components/ServiceSelector';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { appointmentApi, petApi, serviceApi } from '../../api/services';
 
 const OwnerAppointments = () => {
@@ -92,7 +93,10 @@ const OwnerAppointments = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Mis Citas</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">event</span>
+              <h1 className="text-3xl font-bold text-gray-800">Mis Citas</h1>
+            </div>
             <p className="text-gray-600 mt-2">Gestiona las citas de tus mascotas</p>
           </div>
           <button
@@ -159,17 +163,16 @@ const OwnerAppointments = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mascota</label>
-                  <select
-                    required
+                  <SearchableDropdown
+                    options={pets}
                     value={formData.petId}
-                    onChange={(e) => setFormData({ ...formData, petId: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
-                  >
-                    <option value="">Selecciona una mascota</option>
-                    {pets.map((pet) => (
-                      <option key={pet.id} value={pet.id}>{pet.name}</option>
-                    ))}
-                  </select>
+                    onChange={(petId) => setFormData({ ...formData, petId: petId || '' })}
+                    placeholder="Selecciona una mascota"
+                    required
+                    getOptionLabel={(pet) => pet?.name || ''}
+                    getOptionSecondary={(pet) => pet?.breed || ''}
+                    getSearchableText={(pet) => `${pet?.name || ''} ${pet?.breed || ''}`}
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>

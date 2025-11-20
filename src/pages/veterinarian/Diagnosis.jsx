@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { diagnosisApi } from '../../api/services';
 import { useAuth } from '../../context/AuthContext';
 
@@ -16,6 +17,12 @@ const VeterinarianDiagnosis = () => {
     { path: '/veterinarian/appointments', icon: 'event', label: 'Citas' },
     { path: '/veterinarian/diagnoses', icon: 'medical_services', label: 'Diagnósticos' },
   ];
+
+  const statusOptions = useMemo(() => ([
+    { value: 'ALL', label: 'Todos los estados' },
+    { value: 'ACTIVE', label: 'Activos' },
+    { value: 'INACTIVE', label: 'Inactivos' },
+  ]), []);
 
   useEffect(() => {
     if (!user) return;
@@ -125,7 +132,10 @@ const VeterinarianDiagnosis = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Diagnósticos</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">assignment_ind</span>
+              <h1 className="text-3xl font-bold text-gray-800">Diagnósticos</h1>
+            </div>
             <p className="text-gray-600 mt-2">Historial de diagnósticos registrados</p>
           </div>
         </div>
@@ -149,15 +159,15 @@ const VeterinarianDiagnosis = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
+              <SearchableDropdown
+                options={statusOptions}
                 value={filters.status}
-                onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-teal"
-              >
-                <option value="ALL">Todos</option>
-                <option value="ACTIVE">Activos</option>
-                <option value="INACTIVE">Inactivos</option>
-              </select>
+                onChange={(val) => setFilters({ ...filters, status: val || 'ALL' })}
+                placeholder="Filtrar por estado"
+                valueKey="value"
+                getOptionLabel={(opt) => opt.label}
+                sort={false}
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>

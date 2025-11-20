@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
-import { petApi } from '../../api/services';
-// import { diagnosisApi } from '../../api/services'; // No disponible en backend actual
+import { petApi, diagnosisApi } from '../../api/services';
 
 const OwnerHistory = () => {
   const [pets, setPets] = useState([]);
@@ -42,11 +41,13 @@ const OwnerHistory = () => {
   };
 
   const loadDiagnoses = async (petId) => {
-    try {
-      // Los diagnósticos no están implementados en el backend actual
+    if (!petId) {
       setDiagnoses([]);
-      // const response = await diagnosisApi.getByPet(petId);
-      // setDiagnoses(response.data || []);
+      return;
+    }
+    try {
+      const response = await diagnosisApi.getByPet(petId);
+      setDiagnoses(response.data || []);
     } catch (error) {
       console.error('Error al cargar diagnósticos:', error);
       setDiagnoses([]);
@@ -79,7 +80,10 @@ const OwnerHistory = () => {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Historial Médico</h1>
+          <div className="flex items-center gap-3">
+            <span className="material-icons text-teal text-4xl" aria-hidden="true">history</span>
+            <h1 className="text-3xl font-bold text-gray-800">Historial Médico</h1>
+          </div>
           <p className="text-gray-600 mt-2">Consulta el historial médico de tus mascotas</p>
         </div>
 
@@ -160,7 +164,7 @@ const OwnerHistory = () => {
                           {diagnosis.appointment?.service?.name || 'Consulta Médica'}
                         </h3>
                         <p className="text-sm text-gray-500">
-                          {new Date(diagnosis.appointment?.datetime || diagnosis.createdAt).toLocaleDateString('es-ES', {
+                          {new Date(diagnosis.date || diagnosis.createdAt).toLocaleDateString('es-ES', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
@@ -176,9 +180,9 @@ const OwnerHistory = () => {
                     </div>
                     <div className="space-y-3">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">Observaciones</h4>
+                        <h4 className="text-sm font-medium text-gray-700 mb-1">Descripción</h4>
                         <p className="text-sm text-gray-600 bg-gray-50 rounded-md p-3">
-                          {diagnosis.observations || 'Sin observaciones'}
+                          {diagnosis.description || 'Sin descripción'}
                         </p>
                       </div>
                       {diagnosis.treatment && (

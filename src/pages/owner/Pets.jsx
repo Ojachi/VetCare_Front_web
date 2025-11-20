@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import SearchableDropdown from '../../components/SearchableDropdown';
 import { petApi } from '../../api/services';
 
 const OwnerPets = () => {
@@ -16,6 +17,11 @@ const OwnerPets = () => {
     sex: '',
   });
   const [feedback, setFeedback] = useState(null);
+
+  const sexOptions = useMemo(() => ([
+    { value: 'M', label: 'Macho' },
+    { value: 'F', label: 'Hembra' },
+  ]), []);
 
   const navigation = [
     { path: '/owner/dashboard', icon: 'dashboard', label: 'Dashboard' },
@@ -52,7 +58,7 @@ const OwnerPets = () => {
       }
       setShowModal(false);
       setEditingPet(null);
-      setFormData({ name: '', species: '', breed: '', age: '', weight: '' });
+      setFormData({ name: '', species: '', breed: '', age: '', weight: '', sex: '' });
       loadPets();
     } catch (error) {
       setFeedback({ type: 'error', message: error.response?.data?.message || 'Error al guardar' });
@@ -88,7 +94,10 @@ const OwnerPets = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Mis Mascotas</h1>
+            <div className="flex items-center gap-3">
+              <span className="material-icons text-teal text-4xl" aria-hidden="true">pets</span>
+              <h1 className="text-3xl font-bold text-gray-800">Mis Mascotas</h1>
+            </div>
             <p className="text-gray-600 mt-2">Gestiona la información de tus mascotas</p>
           </div>
           <button
@@ -202,16 +211,16 @@ const OwnerPets = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-                  <select
-                    required
+                  <SearchableDropdown
+                    options={sexOptions}
                     value={formData.sex}
-                    onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal"
-                  >
-                    <option value="">Seleccionar</option>
-                    <option value="M">Macho</option>
-                    <option value="F">Hembra</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, sex: val || '' })}
+                    placeholder="Seleccionar sexo"
+                    required
+                    valueKey="value"
+                    getOptionLabel={(opt) => opt.label}
+                    sort={false}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
