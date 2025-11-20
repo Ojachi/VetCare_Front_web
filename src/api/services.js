@@ -50,6 +50,11 @@ export const appointmentApi = {
   complete: (id) => axiosInstance.put(`/appointments/${id}/status`, { status: 'COMPLETED' }),
 };
 
+export const chatApi = {
+  consult: (message) => axiosInstance.post('/chat/consult', { message: message?.trim() || '' }),
+  status: () => axiosInstance.get('/chat/status'),
+};
+
 export const serviceApi = {
   getAll: () => axiosInstance.get('/services'),
   getById: (id) => axiosInstance.get(`/services/${id}`),
