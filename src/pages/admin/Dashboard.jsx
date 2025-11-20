@@ -64,7 +64,10 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Panel de Administración</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <span className="material-icons text-teal text-4xl" aria-hidden="true">space_dashboard</span>
+          <h1 className="text-3xl font-bold text-gray-800">Panel de Administración</h1>
+        </div>
         <p className="text-gray-600 mb-8">Visión general del sistema</p>
         {loading ? (
           <div className="flex justify-center items-center h-64">
