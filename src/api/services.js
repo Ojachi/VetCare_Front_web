@@ -18,6 +18,7 @@ export const authApi = {
   getCurrentUser: () => axiosInstance.get('/users/me'),
   logout: () => axiosInstance.post('/auth/logout'),
   updateProfile: (id, data) => axiosInstance.put(`/users/${id}`, data),
+  changePassword: (payload) => axiosInstance.put('/users/change-password', payload),
 };
 
 export const petApi = {
