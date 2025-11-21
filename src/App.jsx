@@ -6,6 +6,10 @@ import Login from './pages/login';
 import Register from './pages/register';
 import RecoverPassword from './pages/recoverpassword';
 import ResetPassword from './pages/resetpassword';
+import LegalPrivacy from './pages/LegalPrivacy';
+import LegalTerms from './pages/LegalTerms';
+import OurTeam from './pages/OurTeam';
+import Contact from './pages/Contact';
 import OwnerDashboard from './pages/owner/Dashboard';
 import OwnerPets from './pages/owner/Pets';
 import OwnerAppointments from './pages/owner/Appointments';
@@ -24,7 +28,6 @@ import AdminAppointments from './pages/admin/Appointments';
 import AdminPets from './pages/admin/Pets';
 import AdminMedicalHistory from './pages/admin/MedicalHistory';
 import ProductManagement from './pages/admin/ProductManagement';
-import Categories from './pages/admin/Categories';
 import SalesRegister from './pages/admin/SalesRegister';
 import SalesHistory from './pages/admin/SalesHistory';
 import VeterinarianDashboard from './pages/veterinarian/Dashboard';
@@ -32,6 +35,7 @@ import VeterinarianAppointments from './pages/veterinarian/Appointments';
 import VeterinarianDiagnosis from './pages/veterinarian/Diagnosis';
 import Profile from './pages/Profile';
 import Navbar from './components/navbar';
+import Footer from './components/footer';
 import Catalog from './pages/product/Catalog';
 import Detail from './pages/product/Detail';
 import './App.css';
@@ -48,6 +52,10 @@ function App() {
           <Route path="/registro" element={<><Navbar /><Register /></>} />
           <Route path="/recuperar-password" element={<><Navbar /><RecoverPassword /></>} />
           <Route path="/restablecer-password" element={<><Navbar /><ResetPassword /></>} />
+          <Route path="/terminos" element={<><Navbar /><LegalTerms /><Footer /></>} />
+          <Route path="/privacidad" element={<><Navbar /><LegalPrivacy /><Footer /></>} />
+          <Route path="/nuestro-equipo" element={<><Navbar /><OurTeam /><Footer /></>} />
+          <Route path="/contacto" element={<><Navbar /><Contact /><Footer /></>} />
 
           {/* Catálogo Productos (roles autenticados) */}
           <Route
@@ -250,14 +258,6 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <ProductManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/categorias"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <Categories />
               </ProtectedRoute>
             }
           />

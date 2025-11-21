@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import logo from '../assets/icon_dog.svg';
 
 const navLinks = [
-  { to: '/servicios', label: 'Servicios' },
   { to: '/nuestro-equipo', label: 'Nuestro Equipo' },
   { to: '/contacto', label: 'Contacto' },
 ];

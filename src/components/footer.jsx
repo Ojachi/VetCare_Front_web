@@ -5,9 +5,7 @@ const linkGroup = [
   {
     title: 'Nuestra Clínica',
     links: [
-      { to: '/servicios', label: 'Servicios' },
       { to: '/nuestro-equipo', label: 'Nuestro Equipo' },
-      { to: '/urgencias', label: 'Urgencias' },
     ],
   },
   {
@@ -58,7 +56,7 @@ const Footer = () => (
     </div>
     <div className="bg-black/10">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-center">
-        <span className="text-sm">© 2024 VetCare. Todos los derechos reservados.</span>
+        <span className="text-sm">© 2025 VetCare. Todos los derechos reservados.</span>
       </div>
     </div>
   </footer>
