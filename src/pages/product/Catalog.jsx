@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { addToCart, activateProduct, deleteProduct, fetchCategories } from '../../api/products';
-import { useProducts } from '../../hooks/useProducts';
+import React, { useEffect, useState } from 'react';
+import { fetchProducts, addToCart, activateProduct, deleteProduct, fetchCategories } from '../../api/products';
 import ProductFilters from '../../components/ProductFilters';
 import ProductCard from '../../components/ProductCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -9,28 +8,43 @@ import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const Catalog = () => {
-  const { products, loading, error, updateFilters } = useProducts({ activeOnly: true });
+  const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { user } = useAuth();
   const role = user?.role;
   const navigate = useNavigate();
 
-  const loadCategories = useCallback(async () => {
+  const loadData = async (filters = { active: true }) => {
+    setLoading(true);
+    setError(null);
     try {
-      const cats = await fetchCategories();
-      setCategories(cats);
+      const [productList, categoryList] = await Promise.all([
+        fetchProducts(filters),
+        fetchCategories()
+      ]);
+      setProducts(productList);
+      setCategories(categoryList);
     } catch (e) {
-      console.error('Error cargando categorías:', e);
+      setError(e.message || 'Error cargando productos');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    loadData();
+  }, []);
 
-  const handleFilters = useCallback((newFilters) => {
-    updateFilters(newFilters);
-  }, [updateFilters]);
+  const handleFilters = (newFilters) => {
+    const params = { ...newFilters };
+    if (params.activeOnly !== undefined) {
+      params.active = params.activeOnly;
+      delete params.activeOnly;
+    }
+    loadData(params);
+  };
 
   const handleAddToCart = async (productId) => {
     try {
@@ -45,7 +59,7 @@ const Catalog = () => {
     if (!window.confirm('¿Eliminar producto?')) return;
     try {
       await deleteProduct(id);
-      updateFilters({});
+      loadData();
     } catch (e) {
       alert('Error eliminando');
     }
@@ -54,7 +68,7 @@ const Catalog = () => {
   const handleActivate = async (id) => {
     try {
       await activateProduct(id);
-      updateFilters({});
+      loadData();
     } catch (e) {
       alert('Error activando');
     }

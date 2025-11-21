@@ -51,6 +51,7 @@ const DashboardLayout = ({ children, navigation }) => {
       { path: '/admin/medical-history', icon: 'medical_services', label: 'Historial Médico' },
       { path: '/productos', icon: 'store', label: 'Catálogo' },
       { path: '/admin/productos', icon: 'inventory', label: 'Gestión Productos' },
+      { path: '/admin/categorias', icon: 'category', label: 'Categorías' },
       { path: '/admin/ventas/registro', icon: 'point_of_sale', label: 'Registro Ventas' },
       { path: '/admin/ventas/historial', icon: 'receipt_long', label: 'Historial Ventas' },
       { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },

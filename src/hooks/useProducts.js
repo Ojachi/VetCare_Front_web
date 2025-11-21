@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import { fetchProductsCached, clearProductsCache } from '../api/products';
+import { useState, useEffect } from 'react';
+import { fetchProducts, clearProductsCache } from '../api/products';
 
 export const useProducts = (initialFilters = {}) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState(initialFilters);
 
-  const loadProducts = useCallback(async (filterParams = filters) => {
+  const loadProducts = async (filterParams = {}) => {
     setLoading(true);
     setError(null);
     try {
@@ -17,34 +16,32 @@ export const useProducts = (initialFilters = {}) => {
         delete params.activeOnly;
       }
       
-      const list = await fetchProductsCached(params);
+      const list = await fetchProducts(params);
       setProducts(list);
     } catch (e) {
       setError(e.message || 'Error cargando productos');
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
-  const updateFilters = useCallback((newFilters) => {
-    setFilters(newFilters);
+  const updateFilters = (newFilters) => {
     loadProducts(newFilters);
-  }, [loadProducts]);
+  };
 
-  const refreshProducts = useCallback(() => {
+  const refreshProducts = () => {
     clearProductsCache();
-    loadProducts();
-  }, [loadProducts]);
+    loadProducts(initialFilters);
+  };
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    loadProducts(initialFilters);
+  }, []);
 
   return {
     products,
     loading,
     error,
-    filters,
     updateFilters,
     refreshProducts,
     loadProducts

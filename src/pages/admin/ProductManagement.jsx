@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { createProduct, updateProduct, deleteProduct, activateProduct, fetchCategories } from '../../api/products';
-import { useProducts } from '../../hooks/useProducts';
+import React, { useEffect, useState } from 'react';
+import { fetchProducts, createProduct, updateProduct, deleteProduct, activateProduct, fetchCategories } from '../../api/products';
 import ProductForm from '../../components/ProductForm';
 import ProductTable from '../../components/ProductTable';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -8,7 +7,9 @@ import DashboardLayout from '../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
 
 const ProductManagement = () => {
-  const { products, loading, error, refreshProducts } = useProducts();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
@@ -16,57 +17,65 @@ const ProductManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const navigate = useNavigate();
 
-  const loadCategories = useCallback(async () => {
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const cats = await fetchCategories();
-      setCategories(cats);
+      const [productList, categoryList] = await Promise.all([
+        fetchProducts(),
+        fetchCategories()
+      ]);
+      setProducts(productList);
+      setCategories(categoryList);
     } catch (e) {
-      console.error('Error cargando categorías:', e);
+      setError('Error cargando datos');
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => { loadCategories(); }, [loadCategories]);
+  useEffect(() => { loadData(); }, []);
 
-  const handleCreate = useCallback(async (payload) => {
+  const handleCreate = async (payload) => {
     try {
       await createProduct(payload);
       setShowForm(false);
       setEditing(null);
-      refreshProducts();
+      loadData();
     } catch (e) {
       alert('Error creando');
     }
-  }, [refreshProducts]);
+  };
 
-  const handleUpdate = useCallback(async (payload) => {
+  const handleUpdate = async (payload) => {
     try {
       await updateProduct(editing.id, payload);
       setShowForm(false);
       setEditing(null);
-      refreshProducts();
+      loadData();
     } catch (e) {
       alert('Error actualizando');
     }
-  }, [editing?.id, refreshProducts]);
+  };
 
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar producto?')) return;
     try {
       await deleteProduct(id);
-      refreshProducts();
+      loadData();
     } catch (e) {
       alert('Error eliminando');
     }
-  }, [refreshProducts]);
+  };
 
-  const handleActivate = useCallback(async (id) => {
+  const handleActivate = async (id) => {
     try {
       await activateProduct(id);
-      refreshProducts();
+      loadData();
     } catch (e) {
       alert('Error activando');
     }
-  }, [refreshProducts]);
+  };
 
   const onEdit = (p) => {
     setEditing(p);
@@ -80,14 +89,12 @@ const ProductManagement = () => {
 
   const onSelect = (id) => navigate(`/productos/${id}`);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchName = p.name.toLowerCase().includes(search.toLowerCase());
-      const cid = p.categoryId || p.category?.id;
-      const matchCat = !categoryFilter || cid == categoryFilter;
-      return matchName && matchCat;
-    });
-  }, [products, search, categoryFilter]);
+  const filteredProducts = products.filter(p => {
+    const matchName = p.name.toLowerCase().includes(search.toLowerCase());
+    const cid = p.categoryId || p.category?.id;
+    const matchCat = !categoryFilter || cid == categoryFilter;
+    return matchName && matchCat;
+  });
 
   return (
     <DashboardLayout>
@@ -108,12 +115,15 @@ const ProductManagement = () => {
               <span className="material-icons">add_circle</span>
               Agregar Producto
             </button>
-            <button onClick={() => navigate('/admin/categorias')} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+            <button onClick={() => {
+              console.log('Navegando a categorías...');
+              navigate('/admin/categorias');
+            }} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
               <span className="material-icons">category</span>
               Gestionar Categorías
             </button>
           </div>
-          <button onClick={refreshProducts} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+          <button onClick={loadData} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
             <span className="material-icons">refresh</span>
             Refrescar
           </button>
