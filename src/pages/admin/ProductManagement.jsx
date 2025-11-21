@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { fetchProducts, createProduct, updateProduct, deleteProduct, activateProduct, fetchCategories } from '../../api/products';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { createProduct, updateProduct, deleteProduct, activateProduct, fetchCategories } from '../../api/products';
+import { useProducts } from '../../hooks/useProducts';
 import ProductForm from '../../components/ProductForm';
 import ProductTable from '../../components/ProductTable';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useNavigate } from 'react-router-dom';
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { products, loading, error, refreshProducts } = useProducts();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState('');
@@ -16,63 +16,57 @@ const ProductManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('');
   const navigate = useNavigate();
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const loadCategories = useCallback(async () => {
     try {
-      const list = await fetchProducts();
-      setProducts(list);
       const cats = await fetchCategories();
       setCategories(cats);
     } catch (e) {
-      setError('Error cargando productos');
-    } finally {
-      setLoading(false);
+      console.error('Error cargando categorías:', e);
     }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadCategories(); }, [loadCategories]);
 
-  const handleCreate = async (payload) => {
+  const handleCreate = useCallback(async (payload) => {
     try {
       await createProduct(payload);
       setShowForm(false);
       setEditing(null);
-      await load();
+      refreshProducts();
     } catch (e) {
       alert('Error creando');
     }
-  };
+  }, [refreshProducts]);
 
-  const handleUpdate = async (payload) => {
+  const handleUpdate = useCallback(async (payload) => {
     try {
       await updateProduct(editing.id, payload);
       setShowForm(false);
       setEditing(null);
-      await load();
+      refreshProducts();
     } catch (e) {
       alert('Error actualizando');
     }
-  };
+  }, [editing?.id, refreshProducts]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = useCallback(async (id) => {
     if (!window.confirm('¿Eliminar producto?')) return;
     try {
       await deleteProduct(id);
-      await load();
+      refreshProducts();
     } catch (e) {
       alert('Error eliminando');
     }
-  };
+  }, [refreshProducts]);
 
-  const handleActivate = async (id) => {
+  const handleActivate = useCallback(async (id) => {
     try {
       await activateProduct(id);
-      await load();
+      refreshProducts();
     } catch (e) {
       alert('Error activando');
     }
-  };
+  }, [refreshProducts]);
 
   const onEdit = (p) => {
     setEditing(p);
@@ -85,6 +79,15 @@ const ProductManagement = () => {
   };
 
   const onSelect = (id) => navigate(`/productos/${id}`);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchName = p.name.toLowerCase().includes(search.toLowerCase());
+      const cid = p.categoryId || p.category?.id;
+      const matchCat = !categoryFilter || cid == categoryFilter;
+      return matchName && matchCat;
+    });
+  }, [products, search, categoryFilter]);
 
   return (
     <DashboardLayout>
@@ -110,7 +113,7 @@ const ProductManagement = () => {
               Gestionar Categorías
             </button>
           </div>
-          <button onClick={load} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+          <button onClick={refreshProducts} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
             <span className="material-icons">refresh</span>
             Refrescar
           </button>
@@ -134,21 +137,12 @@ const ProductManagement = () => {
           </div>
         </div>
         
-        {loading && (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal"></div>
-          </div>
-        )}
+        {loading && <LoadingSpinner text="Cargando productos..." />}
         
         {!showForm && !loading && (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <ProductTable
-              products={products.filter(p => {
-                const matchName = p.name.toLowerCase().includes(search.toLowerCase());
-                const cid = p.categoryId || p.category?.id;
-                const matchCat = !categoryFilter || cid == categoryFilter;
-                return matchName && matchCat;
-              })}
+              products={filteredProducts}
               role="ADMIN"
               onEdit={onEdit}
               onDelete={handleDelete}

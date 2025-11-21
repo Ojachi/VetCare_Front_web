@@ -1,10 +1,38 @@
 import axios from './axios';
 
 // PRODUCTOS
-// Permite filtros opcionales: { search, active, minPrice, maxPrice, categoryId }
+// Permite filtros opcionales: { search, active, minPrice, maxPrice, categoryId, page, size }
 export const fetchProducts = async (params = {}) => {
   const { data } = await axios.get('/products', { params });
-  return data; // List<ProductResponseDTO>
+  return data; // List<ProductResponseDTO> o Page<ProductResponseDTO> si se usa paginación
+};
+
+// Versión optimizada con caché simple
+let productsCache = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 30000; // 30 segundos
+
+export const fetchProductsCached = async (params = {}) => {
+  const now = Date.now();
+  const useCache = !params.search && !params.minPrice && !params.maxPrice && !params.categoryId;
+  
+  if (useCache && productsCache && cacheTimestamp && (now - cacheTimestamp) < CACHE_DURATION) {
+    return productsCache;
+  }
+  
+  const data = await fetchProducts(params);
+  
+  if (useCache) {
+    productsCache = data;
+    cacheTimestamp = now;
+  }
+  
+  return data;
+};
+
+export const clearProductsCache = () => {
+  productsCache = null;
+  cacheTimestamp = null;
 };
 
 export const fetchProductById = async (id) => {
@@ -15,24 +43,29 @@ export const fetchProductById = async (id) => {
 export const createProduct = async (payload) => {
   // payload: { name, description, price, image, stock }
   const { data } = await axios.post('/products', payload);
+  clearProductsCache();
   return data;
 };
 
 export const updateProduct = async (id, payload) => {
   const { data } = await axios.put(`/products/${id}`, payload);
+  clearProductsCache();
   return data;
 };
 
 export const activateProduct = async (id) => {
   await axios.put(`/products/${id}/activate`);
+  clearProductsCache();
 };
 
 export const deactivateProduct = async (id) => {
   await axios.put(`/products/${id}/deactivate`);
+  clearProductsCache();
 };
 
 export const deleteProduct = async (id) => {
   await axios.delete(`/products/${id}`);
+  clearProductsCache();
 };
 
 // CARRITO (Owner)
