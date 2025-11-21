@@ -95,7 +95,27 @@ export const fetchPurchaseById = async (purchaseId) => {
 // CATEGORÍAS
 export const fetchCategories = async () => {
   const { data } = await axios.get('/categories');
-  return data; // List<CategoryDTO>
+  return data; // List<CategoryResponseDTO>
+};
+
+export const fetchCategoryById = async (id) => {
+  const { data } = await axios.get(`/categories/${id}`);
+  return data; // CategoryResponseDTO
+};
+
+export const createCategory = async (payload) => {
+  // payload: { name, description }
+  const { data } = await axios.post('/categories', payload);
+  return data;
+};
+
+export const updateCategory = async (id, payload) => {
+  const { data } = await axios.put(`/categories/${id}`, payload);
+  return data;
+};
+
+export const deleteCategory = async (id) => {
+  await axios.delete(`/categories/${id}`);
 };
 
 // COMPRAS GLOBALES (Admin / Employee)

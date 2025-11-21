@@ -50,15 +50,6 @@ const ProductForm = ({ product, onSubmit, onCancel, categories = [] }) => {
       setLoading(false);
     }
   };
-      <div>
-        <label className="text-xs font-medium">Categoría</label>
-        <select name="categoryId" value={form.categoryId} onChange={handleChange} className="border w-full px-2 py-1 rounded">
-          <option value="">-- Seleccionar --</option>
-          {categories.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </div>
 
   return (
     <form onSubmit={submit} className="space-y-3">
@@ -68,7 +59,7 @@ const ProductForm = ({ product, onSubmit, onCancel, categories = [] }) => {
       </div>
       <div>
         <label className="text-xs font-medium">Descripción</label>
-        <textarea name="description" value={form.description} onChange={handleChange} required maxLength={100} className="border w-full px-2 py-1 rounded" />
+        <textarea name="description" value={form.description} onChange={handleChange} required maxLength={500} className="border w-full px-2 py-1 rounded" />
       </div>
       <div className="flex gap-3">
         <div className="flex-1">
@@ -79,6 +70,15 @@ const ProductForm = ({ product, onSubmit, onCancel, categories = [] }) => {
           <label className="text-xs font-medium">Stock</label>
           <input type="number" name="stock" value={form.stock} onChange={handleChange} required min={0} className="border w-full px-2 py-1 rounded" />
         </div>
+      </div>
+      <div>
+        <label className="text-xs font-medium">Categoría</label>
+        <select name="categoryId" value={form.categoryId} onChange={handleChange} className="border w-full px-2 py-1 rounded">
+          <option value="">-- Seleccionar --</option>
+          {categories.map(c => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="text-xs font-medium">Imagen (PNG/JPEG)</label>

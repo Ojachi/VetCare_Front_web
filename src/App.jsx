@@ -23,6 +23,7 @@ import AdminAppointments from './pages/admin/Appointments';
 import AdminPets from './pages/admin/Pets';
 import AdminMedicalHistory from './pages/admin/MedicalHistory';
 import ProductManagement from './pages/admin/ProductManagement';
+import Categories from './pages/admin/Categories';
 import SalesRegister from './pages/admin/SalesRegister';
 import SalesHistory from './pages/admin/SalesHistory';
 import VeterinarianDashboard from './pages/veterinarian/Dashboard';
@@ -240,6 +241,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <ProductManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categorias"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <Categories />
               </ProtectedRoute>
             }
           />

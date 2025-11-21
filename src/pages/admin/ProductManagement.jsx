@@ -100,10 +100,16 @@ const ProductManagement = () => {
         {error && <p className="text-red-600 bg-red-50 p-4 rounded-lg mb-4">{error}</p>}
         
         <div className="flex flex-wrap justify-between items-center mb-4 gap-3">
-          <button onClick={openNew} className="flex items-center gap-2 bg-teal hover:bg-teal-dark text-white px-4 py-2 rounded-lg font-medium transition-colors">
-            <span className="material-icons">add_circle</span>
-            Agregar Producto
-          </button>
+          <div className="flex gap-2">
+            <button onClick={openNew} className="flex items-center gap-2 bg-teal hover:bg-teal-dark text-white px-4 py-2 rounded-lg font-medium transition-colors">
+              <span className="material-icons">add_circle</span>
+              Agregar Producto
+            </button>
+            <button onClick={() => navigate('/admin/categorias')} className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+              <span className="material-icons">category</span>
+              Gestionar Categorías
+            </button>
+          </div>
           <button onClick={load} className="flex items-center gap-2 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
             <span className="material-icons">refresh</span>
             Refrescar
