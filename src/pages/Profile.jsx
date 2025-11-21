@@ -86,8 +86,18 @@ const Profile = () => {
       return;
     }
 
-    if (trimmed.newPassword.length < 6) {
-      setPasswordFeedback({ type: 'error', message: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+    if (trimmed.newPassword.length < 8) {
+      setPasswordFeedback({ type: 'error', message: 'La nueva contraseña debe tener al menos 8 caracteres.' });
+      return;
+    }
+
+    if (!/[A-Z]/.test(trimmed.newPassword)) {
+      setPasswordFeedback({ type: 'error', message: 'La contraseña debe contener al menos una letra mayúscula.' });
+      return;
+    }
+
+    if (!/[0-9]/.test(trimmed.newPassword)) {
+      setPasswordFeedback({ type: 'error', message: 'La contraseña debe contener al menos un número.' });
       return;
     }
 
@@ -267,9 +277,10 @@ const Profile = () => {
                         value={passwordData.newPassword}
                         onChange={handlePasswordChange}
                         className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
-                        placeholder="Mínimo 6 caracteres"
+                        placeholder="Mínimo 8 caracteres"
                         required
                       />
+                      <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres, una mayúscula y un número</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar nueva contraseña</label>

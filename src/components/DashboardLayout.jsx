@@ -31,6 +31,7 @@ const DashboardLayout = ({ children, navigation }) => {
       { path: '/employee/pets', icon: 'pets', label: 'Mascotas' },
       { path: '/employee/appointments', icon: 'event', label: 'Citas' },
       { path: '/productos', icon: 'store', label: 'Catálogo' },
+      { path: '/employee/sales/register', icon: 'point_of_sale', label: 'Registro Ventas' },
       { path: '/employee/sales/history', icon: 'receipt_long', label: 'Historial Ventas' },
       { path: '/profile', icon: 'account_circle', label: 'Mi Perfil' },
     ],

@@ -16,6 +16,7 @@ import EmployeeDashboard from './pages/employee/Dashboard';
 import EmployeePets from './pages/employee/Pets';
 import EmployeeAppointments from './pages/employee/Appointments';
 import SalesHistoryEmployee from './pages/employee/SalesHistory';
+import SalesRegisterEmployee from './pages/employee/SalesRegister';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/Users';
 import AdminServices from './pages/admin/Services';
@@ -138,6 +139,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['EMPLOYEE']}>
                 <EmployeeAppointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee/sales/register"
+            element={
+              <ProtectedRoute allowedRoles={['EMPLOYEE']}>
+                <SalesRegisterEmployee />
               </ProtectedRoute>
             }
           />

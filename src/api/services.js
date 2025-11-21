@@ -27,6 +27,8 @@ export const petApi = {
   create: (petData) => axiosInstance.post('/pets', petData),
   update: (id, petData) => axiosInstance.put(`/pets/${id}`, petData),
   remove: (id) => axiosInstance.delete(`/pets/${id}`),
+  activate: (id) => axiosInstance.put(`/pets/${id}/activate`),
+  deactivate: (id) => axiosInstance.put(`/pets/${id}/deactivate`),
 };
 
 export const appointmentApi = {

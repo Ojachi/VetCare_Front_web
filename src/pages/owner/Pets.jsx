@@ -37,7 +37,9 @@ const OwnerPets = () => {
   const loadPets = async () => {
     try {
       const response = await petApi.getAll();
-      setPets(response.data || []);
+      // Filtrar solo mascotas activas
+      const activePets = (response.data || []).filter(pet => pet.active !== false);
+      setPets(activePets);
     } catch (error) {
       console.error('Error cargando mascotas:', error);
       setFeedback({ type: 'error', message: 'Error al cargar las mascotas' });
@@ -81,11 +83,13 @@ const OwnerPets = () => {
   const handleDelete = async (id) => {
     if (!confirm('¿Estás seguro de eliminar esta mascota?')) return;
     try {
-      await petApi.delete(id);
+      await petApi.remove(id);
       setFeedback({ type: 'success', message: 'Mascota eliminada' });
       loadPets();
     } catch (error) {
-      setFeedback({ type: 'error', message: 'Error al eliminar' });
+      console.error('Error al eliminar mascota:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Error al eliminar';
+      setFeedback({ type: 'error', message: errorMsg });
     }
   };
 

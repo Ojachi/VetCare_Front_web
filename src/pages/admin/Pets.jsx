@@ -9,7 +9,14 @@ const AdminPets = () => {
   const [feedback, setFeedback] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingPet, setEditingPet] = useState(null);
-  const [breedValue, setBreedValue] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    species: '',
+    breed: '',
+    age: '',
+    weight: '',
+    sex: ''
+  });
 
   useEffect(() => {
     loadPets();
@@ -45,35 +52,69 @@ const AdminPets = () => {
     age: overrides.age ?? pet.age ?? 1,
     weight: overrides.weight ?? pet.weight ?? 1,
     sex: overrides.sex ?? pet.sex ?? 'M',
-    ownerId: overrides.ownerId ?? pet.owner?.id ?? pet.ownerId ?? null,
+    ownerId: pet.owner?.id ?? pet.ownerId ?? null,
   });
 
   const openEdit = (pet) => {
     setEditingPet(pet);
-    setBreedValue(pet.breed || '');
+    setFormData({
+      name: pet.name || '',
+      species: pet.species || '',
+      breed: pet.breed || '',
+      age: pet.age || '',
+      weight: pet.weight || '',
+      sex: pet.sex || 'M'
+    });
     setShowModal(true);
     setFeedback(null);
+  };
+
+  const handleActivate = async (id) => {
+    if (!confirm('¿Activar esta mascota?')) return;
+    try {
+      await petApi.activate(id);
+      setFeedback({ type: 'success', message: 'Mascota activada correctamente' });
+      loadPets();
+    } catch (error) {
+      console.error('Error activando mascota:', error);
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Error al activar la mascota' });
+    }
+  };
+
+  const handleDeactivate = async (id) => {
+    if (!confirm('¿Desactivar esta mascota?')) return;
+    try {
+      await petApi.deactivate(id);
+      setFeedback({ type: 'success', message: 'Mascota desactivada correctamente' });
+      loadPets();
+    } catch (error) {
+      console.error('Error desactivando mascota:', error);
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'Error al desactivar la mascota' });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!editingPet) return;
-    if (!breedValue.trim()) {
-      setFeedback({ type: 'error', message: 'La raza es obligatoria' });
-      return;
-    }
 
     try {
-      const payload = buildPetPayload(editingPet, { breed: breedValue.trim() });
+      const payload = buildPetPayload(editingPet, {
+        name: formData.name.trim(),
+        species: formData.species.trim(),
+        breed: formData.breed.trim(),
+        age: parseInt(formData.age, 10),
+        weight: parseFloat(formData.weight),
+        sex: formData.sex
+      });
       await petApi.update(editingPet.id, payload);
-      setFeedback({ type: 'success', message: 'Raza actualizada correctamente' });
+      setFeedback({ type: 'success', message: 'Mascota actualizada correctamente' });
       setShowModal(false);
       setEditingPet(null);
-      setBreedValue('');
+      setFormData({ name: '', species: '', breed: '', age: '', weight: '', sex: '' });
       loadPets();
     } catch (error) {
       console.error('Error actualizando mascota:', error);
-      setFeedback({ type: 'error', message: error.response?.data?.message || 'No se pudo actualizar la raza' });
+      setFeedback({ type: 'error', message: error.response?.data?.message || 'No se pudo actualizar la mascota' });
     }
   };
 
@@ -86,7 +127,7 @@ const AdminPets = () => {
               <span className="material-icons text-teal text-4xl" aria-hidden="true">pets</span>
               <h1 className="text-3xl font-bold text-gray-800">Gestión de Mascotas</h1>
             </div>
-            <p className="text-gray-600 mt-2">Consulta y ajusta la raza de las mascotas registradas</p>
+            <p className="text-gray-600 mt-2">Consulta y administra la información de las mascotas registradas</p>
           </div>
         </div>
 
@@ -149,6 +190,10 @@ const AdminPets = () => {
                     <span className="material-icons inline align-middle text-base mr-2">person</span>
                     Dueño
                   </th>
+                  <th className="px-4 py-3">
+                    <span className="material-icons inline align-middle text-base mr-2">toggle_on</span>
+                    Estado
+                  </th>
                   <th className="px-4 py-3 text-right">
                     <span className="material-icons inline align-middle text-base mr-2">tune</span>
                     Acciones
@@ -168,13 +213,39 @@ const AdminPets = () => {
                         <span className="text-xs text-gray-500">{pet.owner?.email || ''}</span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${pet.active !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        <span className="material-icons text-xs">{pet.active !== false ? 'check_circle' : 'cancel'}</span>
+                        {pet.active !== false ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        className="px-3 py-1.5 text-sm text-teal hover:bg-teal/10 rounded-md"
-                        onClick={() => openEdit(pet)}
-                      >
-                        Editar raza
-                      </button>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-md"
+                          onClick={() => openEdit(pet)}
+                          title="Editar mascota"
+                        >
+                          <span className="material-icons text-sm">edit</span>
+                        </button>
+                        {pet.active !== false ? (
+                          <button
+                            className="px-3 py-1.5 text-sm text-orange-600 hover:bg-orange-50 rounded-md"
+                            onClick={() => handleDeactivate(pet.id)}
+                            title="Desactivar mascota"
+                          >
+                            <span className="material-icons text-sm">toggle_off</span>
+                          </button>
+                        ) : (
+                          <button
+                            className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-md"
+                            onClick={() => handleActivate(pet.id)}
+                            title="Activar mascota"
+                          >
+                            <span className="material-icons text-sm">toggle_on</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -186,20 +257,74 @@ const AdminPets = () => {
         {showModal && editingPet && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Actualizar raza</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                Mascota: <span className="font-semibold">{editingPet.name}</span> ({editingPet.species})
-              </p>
+              <h2 className="text-xl font-bold text-gray-800 mb-4">Editar Mascota</h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nueva raza</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
                   <input
                     type="text"
-                    value={breedValue}
-                    onChange={(e) => setBreedValue(e.target.value)}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Especie</label>
+                  <input
+                    type="text"
+                    value={formData.species}
+                    onChange={(e) => setFormData({ ...formData, species: e.target.value })}
+                    required
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Raza</label>
+                  <input
+                    type="text"
+                    value={formData.breed}
+                    onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
+                    required
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
+                  <select
+                    value={formData.sex}
+                    onChange={(e) => setFormData({ ...formData, sex: e.target.value })}
+                    required
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                  >
+                    <option value="M">Macho</option>
+                    <option value="F">Hembra</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Edad (años)</label>
+                    <input
+                      type="number"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      required
+                      min="0"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Peso (kg)</label>
+                    <input
+                      type="number"
+                      value={formData.weight}
+                      onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                      required
+                      min="0"
+                      step="0.1"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm focus:ring-2 focus:ring-teal"
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-3 pt-2">
                   <button
@@ -207,7 +332,7 @@ const AdminPets = () => {
                     onClick={() => {
                       setShowModal(false);
                       setEditingPet(null);
-                      setBreedValue('');
+                      setFormData({ name: '', species: '', breed: '', age: '', weight: '', sex: '' });
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
                   >
